@@ -1,0 +1,16 @@
+#compilation target
+/gaiawebql
+
+#emacs
+*~
+/src/.emacs.desktop.lock
+/src/.emacs.desktop
+
+#Intel C/C++ Compiler optimizer reports
+*.optrpt
+
+#Apple
+**/*.DS_Store
+
+#Microsoft Visual Code IDE
+/.vscode/

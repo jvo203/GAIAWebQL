@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>GAIA DR2 WebQL</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+	<link rel="stylesheet" href="index.css" />
+	<script src="index.js"></script>
+</head>
+
+<body>
+
+	<div class="container">
+		<h1>GAIA DR2 WebQL TEST PAGE</h1>
+
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2>PARAMETRIC SEARCH</h2>
+			</div>
+			<div class="panel-body">
+				<div class="form-inline">
+
+					<div class="form-group">
+						<label for="xmin">X<SUB>MIN</SUB>:</label>
+						<input type="number" class="form-control" id="xmin" value="-1">
+						<label>[kpc]&nbsp;</label>
+					</div>
+
+					<div class="form-group">
+						<label for="xmax">X<SUB>MAX</SUB>:</label>
+						<input type="number" class="form-control" id="xmax" value="1">
+						<label>[kpc]&nbsp;</label>
+					</div>
+					</br>
+
+					<div class="form-group">
+						<label for="ymin">Y<SUB>MIN</SUB>:</label>
+						<input type="number" class="form-control" id="ymin" value="-1">
+						<label>[kpc]&nbsp;</label>
+					</div>
+
+					<div class="form-group">
+						<label for="ymax">Y<SUB>MAX</SUB>:</label>
+						<input type="number" class="form-control" id="ymax" value="1">
+						<label>[kpc]&nbsp;</label>
+					</div>
+					</br>
+
+					<div class="form-group">
+						<label for="zmin">Z<SUB>MIN</SUB>:</label>
+						<input type="number" class="form-control" id="zmin" value="-1">
+						<label>[kpc]&nbsp;</label>
+					</div>
+
+					<div class="form-group">
+						<label for="zmax">Z<SUB>MAX</SUB>:</label>
+						<input type="number" class="form-control" id="zmax" value="1">
+						<label>[kpc]&nbsp;</label>
+					</div>
+					</br>
+
+					<div class="form-group">
+						<label for="rmin">R<SUB>MIN</SUB>:</label>
+						<input type="number" class="form-control" id="rmin" value="0">
+						<label>[kpc]&nbsp;</label>
+					</div>
+
+					<div class="form-group">
+						<label for="rmax">R<SUB>MAX</SUB>:</label>
+						<input type="number" class="form-control" id="rmax" value="1">
+						<label>[kpc]&nbsp;</label>
+					</div>
+					</br>
+
+					<div class="form-group">
+						<label for="phimin">Φ<SUB>MIN</SUB>:</label>
+						<input type="number" class="form-control" id="phimin" value="-1">
+						<label>[deg]&nbsp;</label>
+					</div>
+
+					<div class="form-group">
+						<label for="phimax">Φ<SUB>MAX</SUB>:</label>
+						<input type="number" class="form-control" id="phimax" value="1">
+						<label>[deg]&nbsp;</label>
+					</div>
+					</br>
+
+					<div class="form-group">
+						<label for="mgmin">M<SUB>G</SUB><SUB>&nbsp;MIN</SUB>:</label>
+						<input type="number" class="form-control" id="mgmin" value="-1">
+						<label>[mag]&nbsp;</label>
+					</div>
+
+					<div class="form-group">
+						<label for="mgmax">M<SUB>G</SUB><SUB>&nbsp;MAX</SUB>:</label>
+						<input type="number" class="form-control" id="mgmax" value="1">
+						<label>[mag]&nbsp;</label>
+					</div>
+					</br>
+
+					<div class="form-group">
+						<label for="parallax_over_error_min">parallax_over_error<SUB>MIN</SUB>:</label>
+						<input type="number" class="form-control" id="parallax_over_error_min" value="10">
+						<label>&nbsp;</label>
+					</div>
+					</br>
+
+					<div class="form-group">
+						<label for="where">optional SQL WHERE clause conditions:</label>
+						<input type="text" class="form-control" id="where" size="100"
+							value="parallax > 0 and parallax_over_error > 10">
+					</div>
+					</br>
+
+					<button type="submit" class="btn btn-default" onclick="view_gaia()">Submit</button>
+
+					<button type="submit" class="btn btn-default" onclick="reset_gaia()">Clear All Fields</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2>RA/DEC CONE SEARCH</h2>
+			</div>
+			<div class="panel-body">
+				<div class="form-inline">
+
+					<div class="form-group">
+						<label for="ra">ra:</label>
+						<input type="number" class="form-control" id="ra" value="234.5">
+						<label>deg,&nbsp;</label>
+					</div>
+
+					<div class="form-group">
+						<label for="dec">dec:</label>
+						<input type="number" class="form-control" id="dec" value="-13.5">
+						<label>deg,&nbsp;</label>
+					</div>
+
+					<div class="form-group">
+						<label for="radius">radius:</label>
+						<input type="number" class="form-control" id="radius" value="1">
+						<label>deg&nbsp;</label>
+					</div>
+
+					<div class="form-group">
+						<label for="where_ra_dec">optional SQL WHERE clause conditions:</label>
+						<input type="text" class="form-control" id="where_ra_dec" size="100"
+							value="parallax > 0 and parallax_over_error > 10">
+					</div>
+
+					<button type="submit" class="btn btn-default" onclick="view_gaia_ra_dec()">Submit</button>
+					<!--
+					<button type="submit" class="btn btn-default pull-right" onclick="randomise_gaia()">Random
+						sample</button>
+					-->
+				</div>
+			</div>
+		</div>
+
+	</div>
+</body>
+
+</html>
