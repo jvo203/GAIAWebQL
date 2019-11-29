@@ -49,8 +49,8 @@ using std::chrono::steady_clock;
 
 #include <curl/curl.h>
 #include <uuid/uuid.h>
-#include <libpq-fe.h>
-#include "healpix_base.h"
+#include <pgsql/libpq-fe.h>
+//#include "healpix_base.h"
 #include "json.h"
 
 //CERN ROOT
@@ -411,7 +411,7 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid, struct se
     std::string conn_str = "dbname=gaiadr2 host=" + entry.host + " port=" + std::to_string(entry.port) + " user=" + entry.owner + " password=jvo!";
 
     PGconn *gaia_db = PQconnectdb(conn_str.c_str());
-    uint64 count = 0;
+    uint64_t count = 0;
 
     if (PQstatus(gaia_db) != CONNECTION_OK)
     {
@@ -638,242 +638,14 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid, struct se
     try
     {
         auto entry = requests.at(uuid);
-        std::lock_guard lock(entry->completed_mtx);
+        std::lock_guard<std::mutex> lock(entry->completed_mtx);
         entry->completed.push_back(hpx);
         size_t len = entry->completed.size();
         abort_search = entry->abort;
 
         try
         {
-            std::lock_guard lock(progress_mtx);
-            auto ws = progress_list.at(uuid);
-
-            //send completed via websockets
-            std::ostringstream json;
-            json << "{ \"type\" : \"progress\",  \"completed\" : " << len << ", \"elapsed\" : " << (std::time(nullptr) - entry->timestamp) << " }";
-            //((steady_clock::now() - entry->timestamp).count()) * steady_clock::period::num / static_cast<double>(steady_clock::period::den)
-            ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-        }
-        catch (const std::out_of_range &err)
-        {
-            printf("no websocket connection found for a job request %s\n", uuid.c_str());
-        }
-    }
-    catch (const std::out_of_range &err)
-    {
-        printf("no entry found for a job request %s\n", uuid.c_str());
-        abort_search = true;
-    }
-
-    msg << "processed " << count << " records." << std::endl;
-    std::cout << msg.str();
-
-    return abort_search;
-}
-
-bool gaia_db_cone_search(int hpx, struct db_entry &entry, std::string uuid, double longitude, double latitude, double radius, std::string where, OmniCoords &coords, boost::lockfree::stack<struct plot_data> &plot_stack, struct gaia_hist &hist)
-{
-    std::stringstream msg;
-    bool abort_search = false;
-
-    msg << uuid << ":\t" << entry.schema_name << "/" << entry.table_name << "/" << entry.owner << "/" << entry.host << ":" << entry.port << "\t";
-
-    std::string conn_str = "dbname=gaiadr2 host=" + entry.host + " port=" + std::to_string(entry.port) + " user=" + entry.owner + " password=jvo!";
-
-    PGconn *gaia_db = PQconnectdb(conn_str.c_str());
-    uint64 count = 0;
-
-    if (PQstatus(gaia_db) != CONNECTION_OK)
-    {
-        fprintf(stderr, "PostgreSQL connection failed: %s\n", PQerrorMessage(gaia_db));
-
-        PQfinish(gaia_db);
-        gaia_db = NULL;
-    }
-    else
-    {
-        printf("PostgreSQL connection successful.\n");
-
-        //perform a cone search
-        std::string sql = "select ra,dec,phot_g_mean_mag,bp_rp,parallax,pmra,pmdec,radial_velocity,_point_radec from " + entry.schema_name + "." + entry.table_name + " where (_point_radec <-> spoint(" + std::to_string(longitude) + " , " + std::to_string(latitude) + ")) < " + std::to_string(radius) + " and parallax > 0"; // and parallax_over_error > 10;"; //" limit 1;";
-
-        //add optional search conditions
-        if (where != "")
-            sql.append(" and " + where);
-
-        sql.append(";"); //finish the sql
-
-        //std::cout << sql << std::endl;
-
-        if (PQsendQuery(gaia_db, sql.c_str()))
-        {
-            if (PQsetSingleRowMode(gaia_db))
-            {
-                PGresult *res = NULL;
-
-                while ((res = PQgetResult(gaia_db)) != NULL)
-                {
-                    if (PQresultStatus(res) == PGRES_SINGLE_TUPLE)
-                    {
-                        count++;
-
-                        std::stringstream res_str;
-                        res_str << count << ":\t";
-
-                        int nRows = PQntuples(res);
-                        int nFields = PQnfields(res);
-
-                        /*for (int i = 0; i < nFields; i++)
-                            res_str << PQfname(res, i) << "\t";
-                        res_str << std::endl;*/
-
-                        for (int i = 0; i < nRows; i++)
-                        {
-                            if (nFields >= 8)
-                            {
-                                char *e;
-                                errno = 0;
-
-                                double ra = std::strtod(PQgetvalue(res, i, 0), &e);
-                                if (*e != '\0' || // error, we didn't consume the entire string
-                                    errno != 0)   // error, overflow or underflow
-                                    ra = NAN;
-
-                                double dec = std::strtod(PQgetvalue(res, i, 1), &e);
-                                if (*e != '\0' || // error, we didn't consume the entire string
-                                    errno != 0)   // error, overflow or underflow
-                                    dec = NAN;
-
-                                double phot_g_mean_mag = std::strtod(PQgetvalue(res, i, 2), &e);
-                                if (*e != '\0' || // error, we didn't consume the entire string
-                                    errno != 0)   // error, overflow or underflow
-                                    phot_g_mean_mag = NAN;
-
-                                double bp_rp = std::strtod(PQgetvalue(res, i, 3), &e);
-                                if (*e != '\0' || // error, we didn't consume the entire string
-                                    errno != 0)   // error, overflow or underflow
-                                    bp_rp = NAN;
-
-                                double parallax = std::strtod(PQgetvalue(res, i, 4), &e);
-                                if (*e != '\0' || // error, we didn't consume the entire string
-                                    errno != 0)   // error, overflow or underflow
-                                    parallax = NAN;
-
-                                double pmra = std::strtod(PQgetvalue(res, i, 5), &e);
-                                if (*e != '\0' || // error, we didn't consume the entire string
-                                    errno != 0)   // error, overflow or underflow
-                                    pmra = NAN;
-
-                                double pmdec = std::strtod(PQgetvalue(res, i, 6), &e);
-                                if (*e != '\0' || // error, we didn't consume the entire string
-                                    errno != 0)   // error, overflow or underflow
-                                    pmdec = NAN;
-
-                                double radial_velocity = std::strtod(PQgetvalue(res, i, 7), &e);
-                                if (*e != '\0' || // error, we didn't consume the entire string
-                                    errno != 0)   // error, overflow or underflow
-                                    radial_velocity = NAN;
-
-                                if (!std::isnan(ra) && !std::isnan(dec) && !std::isnan(phot_g_mean_mag) && !std::isnan(bp_rp) && !std::isnan(parallax) && !std::isnan(pmra) && !std::isnan(pmdec) && !std::isnan(radial_velocity))
-                                {
-                                    double M_G = phot_g_mean_mag + 5.0 + 5.0 * log10(parallax / 1000.0);
-
-                                    //res_str << "ra: " << ra << "\t dec: " << dec << "phot_g_mean_mag = " << phot_g_mean_mag << "\tbp_rp = " << bp_rp << "\tparallax = " << parallax << "\tM_G = " << M_G << std::endl;
-
-                                    double alpha = ra * HTMfunc_Pr;  //[rad]
-                                    double delta = dec * HTMfunc_Pr; //[rad]
-                                    double d = 1000.0 / parallax;    //distance [parsec, pc]
-
-                                    /*double rICRS[3] = {d * cos(alpha) * cos(delta), d * sin(alpha) * cos(delta), d * sin(delta)};
-                                    double rGC[3] = {0.0, 0.0, 0.0};
-                                    double r[3] = {-dGC, 0.0, 0.0};
-
-                                    for (int i = 0; i < 3; i++)
-                                        for (int j = 0; j < 3; j++)
-                                            r[i] += R[i][j] * rICRS[j];
-
-                                    for (int i = 0; i < 3; i++)
-                                        for (int j = 0; j < 3; j++)
-                                            rGC[i] += H[i][j] * r[j];
-
-                                    double x = rGC[0];
-                                    double y = rGC[1];
-                                    double z = rGC[2];*/
-
-                                    vec6 sHEQ, sGCA, sGCY;
-                                    sHEQ[0] = d / 1000.0;      //[kpc]
-                                    sHEQ[1] = ra;              //[deg]
-                                    sHEQ[2] = dec;             //[deg]
-                                    sHEQ[3] = radial_velocity; //[km/s]
-                                    sHEQ[4] = pmra;
-                                    sHEQ[5] = pmdec;
-
-                                    coords.take_HEQ_units(sHEQ);
-                                    sGCA = coords.give_GCA_units();
-
-                                    coords.take_HEQ_units(sHEQ);
-                                    sGCY = coords.give_GCY_units();
-
-                                    double X = sGCA[0]; //[kpc]
-                                    double Y = sGCA[1]; //[kpc]
-                                    double Z = sGCA[2]; //[kpc]
-
-                                    double R = sGCY[0];    //[kpc]
-                                    double VR = sGCY[3];   //[km/s]
-                                    double VZ = sGCY[4];   //[km/s]
-                                    double VPhi = sGCY[5]; //[km/s]
-
-                                    //the data is OK, add values to histograms
-                                    struct plot_data data = {bp_rp, M_G, X, Y, Z, R, VR, VPhi, VZ};
-                                    while (!plot_stack.push(data))
-                                        ;
-
-                                    /*std::lock_guard lock(hist.plots_mtx);
-                                    hist.HR->Fill(bp_rp, M_G);
-                                    hist.XY->Fill(X, Y);
-                                    hist.RZ->Fill(R, Z);
-                                    hist.XYVR->Fill(X, Y, VR);
-                                    hist.XYVPhi->Fill(X, Y, VPhi);
-                                    hist.XYVZ->Fill(X, Y, VZ);
-                                    hist.RZVR->Fill(R, Z, VR);
-                                    hist.RZVPhi->Fill(R, Z, VPhi);
-                                    hist.RZVZ->Fill(R, Z, VZ);*/
-                                }
-                            }
-
-                            /*for (int j = 0; j < nFields; j++)
-                                res_str << PQgetvalue(res, i, j) << "\t";
-                            res_str << std::endl
-                                    << std::endl;*/
-                        }
-
-                        //std::cout << res_str.str();
-                    };
-
-                    PQclear(res);
-                };
-            }
-            else
-                std::cout << "error setting PQsetSingleRowMode.\n";
-        }
-        else
-            std::cout << "PQsendQuery error.\n";
-    }
-
-    if (gaia_db != NULL)
-        PQfinish(gaia_db);
-
-    try
-    {
-        auto entry = requests.at(uuid);
-        std::lock_guard lock(entry->completed_mtx);
-        entry->completed.push_back(hpx);
-        size_t len = entry->completed.size();
-        abort_search = entry->abort;
-
-        try
-        {
-            std::lock_guard lock(progress_mtx);
+            std::lock_guard<std::mutex> lock(progress_mtx);
             auto ws = progress_list.at(uuid);
 
             //send completed via websockets
@@ -918,12 +690,12 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
     }();
 
     {
-        std::lock_guard req_lock(requests_mtx);
+        std::lock_guard<std::mutex> req_lock(requests_mtx);
         requests.insert(std::make_pair(uuid, std::make_shared<struct db_search_job>()));
     }
 
     {
-        std::lock_guard res_lock(results_mtx);
+        std::lock_guard<std::mutex> res_lock(results_mtx);
         results.insert(std::make_pair(uuid, std::make_shared<struct gaia_plots>()));
     }
 
@@ -1088,7 +860,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                 global_hist.HR->GetYaxis()->SetTitle("M_{G} [mag]");
                 //global_hist->GetZaxis()->SetTitle("star density");
 
-                std::lock_guard lock(root_mtx);
+                std::lock_guard<std::mutex> lock(root_mtx);
                 //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
                 TCanvas *c = new TCanvas("", "", 600, 600);
                 c->SetBatch(true);
@@ -1115,7 +887,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
 
                     if (encoded != NULL)
                     {
-                        std::lock_guard res_lock(results_mtx);
+                        std::lock_guard<std::mutex> res_lock(results_mtx);
 
                         //send json via websockets
                         try
@@ -1132,7 +904,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                             json << "\"density_plot\" : " << encoded;
                             json << "}";
 
-                            std::lock_guard lock(progress_mtx);
+                            std::lock_guard<std::mutex> lock(progress_mtx);
                             auto ws = progress_list.at(uuid);
 
                             ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
@@ -1173,7 +945,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                 global_hist.XY->GetYaxis()->SetTitle("Y [kpc]");
                 SetView2D(global_hist.XY);
 
-                std::lock_guard lock(root_mtx);
+                std::lock_guard<std::mutex> lock(root_mtx);
                 //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
                 TCanvas *c = new TCanvas("", "", 600, 600);
                 c->SetBatch(true);
@@ -1199,7 +971,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
 
                     if (encoded != NULL)
                     {
-                        std::lock_guard res_lock(results_mtx);
+                        std::lock_guard<std::mutex> res_lock(results_mtx);
 
                         //send json via websockets
                         try
@@ -1216,7 +988,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                             json << "\"density_plot\" : " << encoded;
                             json << "}";
 
-                            std::lock_guard lock(progress_mtx);
+                            std::lock_guard<std::mutex> lock(progress_mtx);
                             auto ws = progress_list.at(uuid);
 
                             ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
@@ -1257,7 +1029,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                 global_hist.RZ->GetYaxis()->SetTitle("Z [kpc]");
                 SetView2D(global_hist.RZ);
 
-                std::lock_guard lock(root_mtx);
+                std::lock_guard<std::mutex> lock(root_mtx);
                 //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
                 TCanvas *c = new TCanvas("", "", 600, 600);
                 c->SetBatch(true);
@@ -1283,7 +1055,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
 
                     if (encoded != NULL)
                     {
-                        std::lock_guard res_lock(results_mtx);
+                        std::lock_guard<std::mutex> res_lock(results_mtx);
 
                         //send json via websockets
                         try
@@ -1300,7 +1072,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                             json << "\"density_plot\" : " << encoded;
                             json << "}";
 
-                            std::lock_guard lock(progress_mtx);
+                            std::lock_guard<std::mutex> lock(progress_mtx);
                             auto ws = progress_list.at(uuid);
 
                             ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
@@ -1342,7 +1114,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                 global_hist.XYVR->GetZaxis()->SetTitle("V_{R} [km/s]");
                 SetView3D(global_hist.XYVR);
 
-                std::lock_guard lock(root_mtx);
+                std::lock_guard<std::mutex> lock(root_mtx);
                 //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
                 TCanvas *c = new TCanvas("", "", 600, 600);
                 c->SetBatch(true);
@@ -1368,7 +1140,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
 
                     if (encoded != NULL)
                     {
-                        std::lock_guard res_lock(results_mtx);
+                        std::lock_guard<std::mutex> res_lock(results_mtx);
 
                         //send json via websockets
                         try
@@ -1385,7 +1157,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                             json << "\"density_plot\" : " << encoded;
                             json << "}";
 
-                            std::lock_guard lock(progress_mtx);
+                            std::lock_guard<std::mutex> lock(progress_mtx);
                             auto ws = progress_list.at(uuid);
 
                             ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
@@ -1427,7 +1199,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                 global_hist.XYVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
                 SetView3D(global_hist.XYVPhi);
 
-                std::lock_guard lock(root_mtx);
+                std::lock_guard<std::mutex> lock(root_mtx);
                 //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
                 TCanvas *c = new TCanvas("", "", 600, 600);
                 c->SetBatch(true);
@@ -1453,7 +1225,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
 
                     if (encoded != NULL)
                     {
-                        std::lock_guard res_lock(results_mtx);
+                        std::lock_guard<std::mutex> res_lock(results_mtx);
 
                         //send json via websockets
                         try
@@ -1470,7 +1242,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                             json << "\"density_plot\" : " << encoded;
                             json << "}";
 
-                            std::lock_guard lock(progress_mtx);
+                            std::lock_guard<std::mutex> lock(progress_mtx);
                             auto ws = progress_list.at(uuid);
 
                             ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
@@ -1512,7 +1284,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                 global_hist.XYVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
                 SetView3D(global_hist.XYVZ);
 
-                std::lock_guard lock(root_mtx);
+                std::lock_guard<std::mutex> lock(root_mtx);
                 //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
                 TCanvas *c = new TCanvas("", "", 600, 600);
                 c->SetBatch(true);
@@ -1538,7 +1310,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
 
                     if (encoded != NULL)
                     {
-                        std::lock_guard res_lock(results_mtx);
+                        std::lock_guard<std::mutex> res_lock(results_mtx);
 
                         //send json via websockets
                         try
@@ -1555,7 +1327,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                             json << "\"density_plot\" : " << encoded;
                             json << "}";
 
-                            std::lock_guard lock(progress_mtx);
+                            std::lock_guard<std::mutex> lock(progress_mtx);
                             auto ws = progress_list.at(uuid);
 
                             ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
@@ -1597,7 +1369,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                 global_hist.RZVR->GetZaxis()->SetTitle("V_{R} [km/s]");
                 SetView3D(global_hist.RZVR);
 
-                std::lock_guard lock(root_mtx);
+                std::lock_guard<std::mutex> lock(root_mtx);
                 //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
                 TCanvas *c = new TCanvas("", "", 600, 600);
                 c->SetBatch(true);
@@ -1623,7 +1395,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
 
                     if (encoded != NULL)
                     {
-                        std::lock_guard res_lock(results_mtx);
+                        std::lock_guard<std::mutex> res_lock(results_mtx);
 
                         //send json via websockets
                         try
@@ -1640,7 +1412,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                             json << "\"density_plot\" : " << encoded;
                             json << "}";
 
-                            std::lock_guard lock(progress_mtx);
+                            std::lock_guard<std::mutex> lock(progress_mtx);
                             auto ws = progress_list.at(uuid);
 
                             ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
@@ -1682,7 +1454,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                 global_hist.RZVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
                 SetView3D(global_hist.RZVPhi);
 
-                std::lock_guard lock(root_mtx);
+                std::lock_guard<std::mutex> lock(root_mtx);
                 //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
                 TCanvas *c = new TCanvas("", "", 600, 600);
                 c->SetBatch(true);
@@ -1708,7 +1480,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
 
                     if (encoded != NULL)
                     {
-                        std::lock_guard res_lock(results_mtx);
+                        std::lock_guard<std::mutex> res_lock(results_mtx);
 
                         //send json via websockets
                         try
@@ -1725,7 +1497,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                             json << "\"density_plot\" : " << encoded;
                             json << "}";
 
-                            std::lock_guard lock(progress_mtx);
+                            std::lock_guard<std::mutex> lock(progress_mtx);
                             auto ws = progress_list.at(uuid);
 
                             ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
@@ -1767,7 +1539,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                 global_hist.RZVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
                 SetView3D(global_hist.RZVZ);
 
-                std::lock_guard lock(root_mtx);
+                std::lock_guard<std::mutex> lock(root_mtx);
                 //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
                 TCanvas *c = new TCanvas("", "", 600, 600);
                 c->SetBatch(true);
@@ -1793,7 +1565,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
 
                     if (encoded != NULL)
                     {
-                        std::lock_guard res_lock(results_mtx);
+                        std::lock_guard<std::mutex> res_lock(results_mtx);
 
                         //send json via websockets
                         try
@@ -1810,7 +1582,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                             json << "\"density_plot\" : " << encoded;
                             json << "}";
 
-                            std::lock_guard lock(progress_mtx);
+                            std::lock_guard<std::mutex> lock(progress_mtx);
                             auto ws = progress_list.at(uuid);
 
                             ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
@@ -1847,7 +1619,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
         else
         {
             //purge the results
-            std::lock_guard res_lock(results_mtx);
+            std::lock_guard<std::mutex> res_lock(results_mtx);
             results.erase(uuid);
         }
 
@@ -1861,7 +1633,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
         delete global_hist.RZVPhi;
         delete global_hist.RZVZ;
 
-        std::lock_guard lock(requests_mtx);
+        std::lock_guard<std::mutex> lock(requests_mtx);
         requests.erase(uuid);
     })
         .detach();
@@ -1915,1055 +1687,6 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search, std::s
                 "></h3>");
     html.append("<div class=\"progress\">");
     html.append("<div id=\"progress-bar\" class=\"progress-bar progress-bar-info progress-bar-striped\" role=\"progressbar\" aria-valuenow=0 aria-valuemin=0 aria-valuemax=" + std::to_string(db_index.size()) + " style=\"width:0%\">0/0</div></div>");
-    html.append("</div");
-
-    //html.append(R"(<script>main();</script>)");
-
-    html.append("</body></html>");
-
-    size_t size = html.length();
-    write_status(res, 200, "OK");
-    write_content_length(res, size);
-    write_content_type(res, "text/html");
-    res->write("\r\n", 2);
-    res->write((const char *)html.data(), size);
-    res->write("\r\n\r\n", 4);
-}
-
-void execute_gaia_cone_search(uWS::HttpResponse *res, double ra, double dec, double radius, std::string where)
-{
-    int order = 4;
-    T_Healpix_Base<int> hpx(order, RING);
-
-    double theta, phi, rad;
-
-    theta = halfpi - dec * HTMfunc_Pr;
-    phi = ra * HTMfunc_Pr;
-    rad = radius * HTMfunc_Pr;
-    pointing ang(theta, phi);
-
-    int idx = hpx.ang2pix(ang);
-    auto pixels = std::make_shared<std::vector<int>>(std::move(hpx.query_disc_inclusive(ang, rad).toVector()));
-
-    std::string uuid = []() -> std::string {
-        uuid_t binuuid;
-        uuid_generate(binuuid);
-        char *uuid = (char *)malloc(37);
-
-        if (uuid != NULL)
-        {
-            uuid_unparse(binuuid, uuid);
-            std::string uuid_str(uuid);
-            free(uuid);
-            return uuid_str;
-        }
-        else
-            return std::string("NULL");
-    }();
-
-    {
-        std::lock_guard req_lock(requests_mtx);
-        requests.insert(std::make_pair(uuid, std::make_shared<struct db_search_job>()));
-    }
-
-    {
-        std::lock_guard res_lock(results_mtx);
-        results.insert(std::make_pair(uuid, std::make_shared<struct gaia_plots>()));
-    }
-
-    std::thread([=]() {
-        printf("starting a GAIA database search thread, job id:%s\n", uuid.c_str());
-
-        double longitude = ra * HTMfunc_Pr;
-        double latitude = dec * HTMfunc_Pr;
-
-        int max_threads = omp_get_max_threads();
-        //std::vector<std::shared_ptr<struct gaia_hist>> thread_hist; //(max_threads);
-        std::vector<OmniCoords> thread_coords(max_threads);
-
-        struct gaia_hist global_hist;
-        char name[255];
-
-        sprintf(name, "%s/HR", uuid.c_str());
-        global_hist.HR = new TH2D(name, "Hertzsprung-Russell diagram", 600, -1.0, 5.0, 600, -5.0, 15.0);
-        /*global_hist.hr_hist = new TH2D(uuid.c_str(), "Hertzsprung-Russell diagram", 600, -1.0, 5.0, 600, -1.0, 1.0);
-        global_hist.hr_hist->SetCanExtend(TH1::kAllAxes);*/
-        //global_hist.hr_hist->SetBit(TH1::kAutoBinPTwo);
-
-        sprintf(name, "%s/XY", uuid.c_str());
-        global_hist.XY = new TH2D(name, "X-Y", 600, -0.1, 0.1, 600, -0.1, 0.1);
-        global_hist.XY->SetCanExtend(TH1::kAllAxes);
-
-        sprintf(name, "%s/RZ", uuid.c_str());
-        global_hist.RZ = new TH2D(name, "R-Z", 600, -0.1, 0.1, 600, -0.1, 0.1);
-        global_hist.RZ->SetCanExtend(TH1::kAllAxes);
-
-        //3D histograms
-        sprintf(name, "%s/XYVR", uuid.c_str());
-        global_hist.XYVR = new TH3D(name, "X-Y-V_{R}", 100, -0.1, 0.1, 100, -0.1, 0.1, 100, -0.1, 0.1);
-        global_hist.XYVR->SetCanExtend(TH1::kAllAxes);
-
-        sprintf(name, "%s/XYVPhi", uuid.c_str());
-        global_hist.XYVPhi = new TH3D(name, "X-Y-V_{\\Phi}", 100, -0.1, 0.1, 100, -0.1, 0.1, 100, -0.1, 0.1);
-        global_hist.XYVPhi->SetCanExtend(TH1::kAllAxes);
-
-        sprintf(name, "%s/XYVZ", uuid.c_str());
-        global_hist.XYVZ = new TH3D(name, "X-Y-V_{Z}", 100, -0.1, 0.1, 100, -0.1, 0.1, 100, -0.1, 0.1);
-        global_hist.XYVZ->SetCanExtend(TH1::kAllAxes);
-
-        sprintf(name, "%s/RZVR", uuid.c_str());
-        global_hist.RZVR = new TH3D(name, "R-Z-V_{R}", 100, -0.1, 0.1, 100, -0.1, 0.1, 100, -0.1, 0.1);
-        global_hist.RZVR->SetCanExtend(TH1::kAllAxes);
-
-        sprintf(name, "%s/RZVPhi", uuid.c_str());
-        global_hist.RZVPhi = new TH3D(name, "R-Z-V_{\\Phi}", 100, -0.1, 0.1, 100, -0.1, 0.1, 100, -0.1, 0.1);
-        global_hist.RZVPhi->SetCanExtend(TH1::kAllAxes);
-
-        sprintf(name, "%s/RZVZ", uuid.c_str());
-        global_hist.RZVZ = new TH3D(name, "R-Z-V_{Z}", 100, -0.1, 0.1, 100, -0.1, 0.1, 100, -0.1, 0.1);
-        global_hist.RZVZ->SetCanExtend(TH1::kAllAxes);
-
-        for (int i = 0; i < max_threads; i++)
-        {
-            thread_coords[i].change_sol_pos(8.3, 0.027);
-
-            char name[255];
-            sprintf(name, "%s/%d", uuid.c_str(), (i + 1));
-
-            //struct gaia_hist hist;
-            //hist.hr_hist = new TH2D(name, "M_{G} vs. BP-RP", 600, -1.0, 5.0, 600, -5.0, 15.0);
-            /*hist->SetCanExtend(TH1::kAllAxes);
-            hist->SetBit(TH1::kAutoBinPTwo);*/
-            //thread_hist[i] = hist;
-            //thread_hist.push_back(std::make_shared<struct gaia_hist>(std::move(hist)));
-        }
-
-        boost::lockfree::stack<struct plot_data> plot_stack(100000);
-        boost::atomic<bool> search_done(false);
-
-        std::thread plot_thread([&]() {
-            std::cout << "starting a histogram thread function.\n";
-
-            unsigned long counter = 0;
-            struct plot_data data;
-
-            auto plotter = [&](struct plot_data data) {
-                global_hist.HR->Fill(data.bp_rp, data.M_G);
-                global_hist.XY->Fill(data.X, data.Y);
-                global_hist.RZ->Fill(data.R, data.Z);
-                global_hist.XYVR->Fill(data.X, data.Y, data.VR);
-                global_hist.XYVPhi->Fill(data.X, data.Y, data.VPhi);
-                global_hist.XYVZ->Fill(data.X, data.Y, data.VZ);
-                global_hist.RZVR->Fill(data.R, data.Z, data.VR);
-                global_hist.RZVPhi->Fill(data.R, data.Z, data.VPhi);
-                global_hist.RZVZ->Fill(data.R, data.Z, data.VZ);
-            };
-
-            //older Boost on py1 does not have consume_all!!!
-
-            while (!search_done)
-            {
-                //counter += plot_stack.consume_all(plotter);
-                while (plot_stack.pop(data))
-                {
-                    plotter(data);
-                    counter++;
-                }
-            }
-
-            //counter += plot_stack.consume_all(plotter);
-            while (plot_stack.pop(data))
-            {
-                plotter(data);
-                counter++;
-            }
-
-            std::cout << "a histogram thread ended after processing " << counter << " values.\n";
-        });
-
-        boost::atomic<bool> search_aborted(false);
-
-#pragma omp parallel shared(global_hist)
-#pragma omp for schedule(dynamic)
-        for (size_t i = 0; i < pixels->size(); i++)
-        {
-            int tid = omp_get_thread_num();
-            bool abort_search = false;
-            int hpx = (*pixels)[i];
-
-            printf("cone search for hpx %d\n", hpx);
-
-            try
-            {
-                auto entry = db_index.at(hpx);
-                abort_search = gaia_db_cone_search(hpx, entry, uuid, longitude, latitude, rad, where, thread_coords[tid], plot_stack, global_hist);
-            }
-            catch (const std::out_of_range &err)
-            {
-                printf("no entry found for hpx=%d\n", hpx);
-            }
-
-            if (abort_search)
-            {
-                search_aborted = true;
-                printf("cancelling a parallel OpenMP search loop.\n");
-
-#pragma omp cancel for
-            }
-        }
-
-        printf("OpenMP parallel for loop done.\n");
-
-        search_done = true;
-        plot_thread.join();
-
-        if (!search_aborted)
-        {
-
-            for (int i = 0; i < max_threads; i++)
-            {
-                //global_hist.hr_hist->Add(thread_hist[i]->hr_hist);
-                //delete thread_hist[i]->hr_hist;
-            }
-
-            //the H-R diagram
-            {
-                ReverseYData(global_hist.HR);
-                global_hist.HR->SetStats(false);
-                global_hist.HR->GetXaxis()->SetTitle("(BP-RP) [mag]");
-                global_hist.HR->GetYaxis()->SetTitle("M_{G} [mag]");
-                //global_hist->GetZaxis()->SetTitle("star density");
-
-                std::lock_guard lock(root_mtx);
-                //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-                TCanvas *c = new TCanvas("", "", 600, 600);
-                c->SetBatch(true);
-                c->SetGrid(true);
-                global_hist.HR->Draw("COLZ"); //COLZ or CONTZ
-                c->SetRightMargin(0.13);
-                ReverseYAxis(global_hist.HR);
-
-                TImage *img = TImage::Create();
-                img->FromPad(c);
-
-                char *image_buffer;
-                int image_size;
-
-                img->GetImageBuffer(&image_buffer, &image_size);
-                std::cout << "HR diagram PNG graphic size: " << image_size << std::endl;
-
-                //base64 conversion
-                char *output = base64((const unsigned char *)image_buffer, image_size);
-
-                if (output != NULL)
-                {
-                    char *encoded = json_encode_string(output);
-
-                    if (encoded != NULL)
-                    {
-                        std::lock_guard res_lock(results_mtx);
-
-                        //send json via websockets
-                        try
-                        {
-                            //send completed search jobs via websockets
-                            std::ostringstream json;
-
-                            json << "{";
-                            json << "\"type\" : \"plot\",";
-                            /*json << "\"thread\" : " << (max_threads + 1) << ",";
-                        json << "\"total\" : " << (max_threads + 1) << ",";*/
-                            json << "\"thread\" : " << (1) << ",";
-                            //json << "\"total\" : " << (1) << ",";
-                            json << "\"density_plot\" : " << encoded;
-                            json << "}";
-
-                            std::lock_guard lock(progress_mtx);
-                            auto ws = progress_list.at(uuid);
-
-                            ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-                            //remove the results
-                            results.erase(uuid);
-                        }
-                        catch (const std::out_of_range &err)
-                        {
-                            printf("no websocket connection found for a job request %s\n", uuid.c_str());
-
-                            try
-                            {
-                                auto result = results.at(uuid);
-                                result->hr = std::string(encoded);
-                            }
-                            catch (const std::out_of_range &err)
-                            {
-                                printf("no entry found in results for a job request %s\n", uuid.c_str());
-                            }
-                        }
-
-                        free(encoded);
-                    }
-
-                    free(output);
-                }
-
-                free(image_buffer);
-
-                delete img;
-                delete c;
-            }
-
-            //the X-Y plot
-            {
-                global_hist.XY->SetStats(false);
-                global_hist.XY->GetXaxis()->SetTitle("X [kpc]");
-                global_hist.XY->GetYaxis()->SetTitle("Y [kpc]");
-                SetView2D(global_hist.XY);
-
-                std::lock_guard lock(root_mtx);
-                //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-                TCanvas *c = new TCanvas("", "", 600, 600);
-                c->SetBatch(true);
-                c->SetGrid(true);
-                global_hist.XY->Draw("COLZ"); //COLZ or CONTZ
-                c->SetRightMargin(0.13);
-
-                TImage *img = TImage::Create();
-                img->FromPad(c);
-
-                char *image_buffer;
-                int image_size;
-
-                img->GetImageBuffer(&image_buffer, &image_size);
-                std::cout << "X-Y plot PNG graphic size: " << image_size << std::endl;
-
-                //base64 conversion
-                char *output = base64((const unsigned char *)image_buffer, image_size);
-
-                if (output != NULL)
-                {
-                    char *encoded = json_encode_string(output);
-
-                    if (encoded != NULL)
-                    {
-                        std::lock_guard res_lock(results_mtx);
-
-                        //send json via websockets
-                        try
-                        {
-                            //send completed search jobs via websockets
-                            std::ostringstream json;
-
-                            json << "{";
-                            json << "\"type\" : \"plot\",";
-                            /*json << "\"thread\" : " << (max_threads + 1) << ",";
-                        json << "\"total\" : " << (max_threads + 1) << ",";*/
-                            json << "\"thread\" : " << (2) << ",";
-                            //json << "\"total\" : " << (1) << ",";
-                            json << "\"density_plot\" : " << encoded;
-                            json << "}";
-
-                            std::lock_guard lock(progress_mtx);
-                            auto ws = progress_list.at(uuid);
-
-                            ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-                            //remove the results
-                            results.erase(uuid);
-                        }
-                        catch (const std::out_of_range &err)
-                        {
-                            printf("no websocket connection found for a job request %s\n", uuid.c_str());
-
-                            try
-                            {
-                                auto result = results.at(uuid);
-                                result->xy = std::string(encoded);
-                            }
-                            catch (const std::out_of_range &err)
-                            {
-                                printf("no entry found in results for a job request %s\n", uuid.c_str());
-                            }
-                        }
-
-                        free(encoded);
-                    }
-
-                    free(output);
-                }
-
-                free(image_buffer);
-
-                delete img;
-                delete c;
-            }
-
-            //the R-Z plot
-            {
-                global_hist.RZ->SetStats(false);
-                global_hist.RZ->GetXaxis()->SetTitle("R [kpc]");
-                global_hist.RZ->GetYaxis()->SetTitle("Z [kpc]");
-                SetView2D(global_hist.RZ);
-
-                std::lock_guard lock(root_mtx);
-                //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-                TCanvas *c = new TCanvas("", "", 600, 600);
-                c->SetBatch(true);
-                c->SetGrid(true);
-                global_hist.RZ->Draw("COLZ"); //COLZ or CONTZ
-                c->SetRightMargin(0.13);
-
-                TImage *img = TImage::Create();
-                img->FromPad(c);
-
-                char *image_buffer;
-                int image_size;
-
-                img->GetImageBuffer(&image_buffer, &image_size);
-                std::cout << "R-Z plot PNG graphic size: " << image_size << std::endl;
-
-                //base64 conversion
-                char *output = base64((const unsigned char *)image_buffer, image_size);
-
-                if (output != NULL)
-                {
-                    char *encoded = json_encode_string(output);
-
-                    if (encoded != NULL)
-                    {
-                        std::lock_guard res_lock(results_mtx);
-
-                        //send json via websockets
-                        try
-                        {
-                            //send completed search jobs via websockets
-                            std::ostringstream json;
-
-                            json << "{";
-                            json << "\"type\" : \"plot\",";
-                            /*json << "\"thread\" : " << (max_threads + 1) << ",";
-                        json << "\"total\" : " << (max_threads + 1) << ",";*/
-                            json << "\"thread\" : " << (3) << ",";
-                            //json << "\"total\" : " << (1) << ",";
-                            json << "\"density_plot\" : " << encoded;
-                            json << "}";
-
-                            std::lock_guard lock(progress_mtx);
-                            auto ws = progress_list.at(uuid);
-
-                            ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-                            //remove the results
-                            results.erase(uuid);
-                        }
-                        catch (const std::out_of_range &err)
-                        {
-                            printf("no websocket connection found for a job request %s\n", uuid.c_str());
-
-                            try
-                            {
-                                auto result = results.at(uuid);
-                                result->rz = std::string(encoded);
-                            }
-                            catch (const std::out_of_range &err)
-                            {
-                                printf("no entry found in results for a job request %s\n", uuid.c_str());
-                            }
-                        }
-
-                        free(encoded);
-                    }
-
-                    free(output);
-                }
-
-                free(image_buffer);
-
-                delete img;
-                delete c;
-            }
-
-            //the X-Y-VR plot
-            {
-                global_hist.XYVR->SetStats(false);
-                global_hist.XYVR->GetXaxis()->SetTitle("X [kpc]");
-                global_hist.XYVR->GetYaxis()->SetTitle("Y [kpc]");
-                global_hist.XYVR->GetZaxis()->SetTitle("V_{R} [km/s]");
-                SetView3D(global_hist.XYVR);
-
-                std::lock_guard lock(root_mtx);
-                //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-                TCanvas *c = new TCanvas("", "", 600, 600);
-                c->SetBatch(true);
-                c->SetGrid(true);
-                global_hist.XYVR->Draw("ISO");
-                c->SetRightMargin(0.13);
-
-                TImage *img = TImage::Create();
-                img->FromPad(c);
-
-                char *image_buffer;
-                int image_size;
-
-                img->GetImageBuffer(&image_buffer, &image_size);
-                std::cout << "X-Y-VR plot PNG graphic size: " << image_size << std::endl;
-
-                //base64 conversion
-                char *output = base64((const unsigned char *)image_buffer, image_size);
-
-                if (output != NULL)
-                {
-                    char *encoded = json_encode_string(output);
-
-                    if (encoded != NULL)
-                    {
-                        std::lock_guard res_lock(results_mtx);
-
-                        //send json via websockets
-                        try
-                        {
-                            //send completed search jobs via websockets
-                            std::ostringstream json;
-
-                            json << "{";
-                            json << "\"type\" : \"plot\",";
-                            /*json << "\"thread\" : " << (max_threads + 1) << ",";
-                        json << "\"total\" : " << (max_threads + 1) << ",";*/
-                            json << "\"thread\" : " << (4) << ",";
-                            //json << "\"total\" : " << (1) << ",";
-                            json << "\"density_plot\" : " << encoded;
-                            json << "}";
-
-                            std::lock_guard lock(progress_mtx);
-                            auto ws = progress_list.at(uuid);
-
-                            ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-                            //remove the results
-                            results.erase(uuid);
-                        }
-                        catch (const std::out_of_range &err)
-                        {
-                            printf("no websocket connection found for a job request %s\n", uuid.c_str());
-
-                            try
-                            {
-                                auto result = results.at(uuid);
-                                result->xyvr = std::string(encoded);
-                            }
-                            catch (const std::out_of_range &err)
-                            {
-                                printf("no entry found in results for a job request %s\n", uuid.c_str());
-                            }
-                        }
-
-                        free(encoded);
-                    }
-
-                    free(output);
-                }
-
-                free(image_buffer);
-
-                delete img;
-                delete c;
-            }
-
-            //the X-Y-VPhi plot
-            {
-                global_hist.XYVPhi->SetStats(false);
-                global_hist.XYVPhi->GetXaxis()->SetTitle("X [kpc]");
-                global_hist.XYVPhi->GetYaxis()->SetTitle("Y [kpc]");
-                global_hist.XYVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
-                SetView3D(global_hist.XYVPhi);
-
-                std::lock_guard lock(root_mtx);
-                //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-                TCanvas *c = new TCanvas("", "", 600, 600);
-                c->SetBatch(true);
-                c->SetGrid(true);
-                global_hist.XYVPhi->Draw("ISO");
-                c->SetRightMargin(0.13);
-
-                TImage *img = TImage::Create();
-                img->FromPad(c);
-
-                char *image_buffer;
-                int image_size;
-
-                img->GetImageBuffer(&image_buffer, &image_size);
-                std::cout << "X-Y-VPhi plot PNG graphic size: " << image_size << std::endl;
-
-                //base64 conversion
-                char *output = base64((const unsigned char *)image_buffer, image_size);
-
-                if (output != NULL)
-                {
-                    char *encoded = json_encode_string(output);
-
-                    if (encoded != NULL)
-                    {
-                        std::lock_guard res_lock(results_mtx);
-
-                        //send json via websockets
-                        try
-                        {
-                            //send completed search jobs via websockets
-                            std::ostringstream json;
-
-                            json << "{";
-                            json << "\"type\" : \"plot\",";
-                            /*json << "\"thread\" : " << (max_threads + 1) << ",";
-                        json << "\"total\" : " << (max_threads + 1) << ",";*/
-                            json << "\"thread\" : " << (5) << ",";
-                            //json << "\"total\" : " << (1) << ",";
-                            json << "\"density_plot\" : " << encoded;
-                            json << "}";
-
-                            std::lock_guard lock(progress_mtx);
-                            auto ws = progress_list.at(uuid);
-
-                            ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-                            //remove the results
-                            results.erase(uuid);
-                        }
-                        catch (const std::out_of_range &err)
-                        {
-                            printf("no websocket connection found for a job request %s\n", uuid.c_str());
-
-                            try
-                            {
-                                auto result = results.at(uuid);
-                                result->xyvphi = std::string(encoded);
-                            }
-                            catch (const std::out_of_range &err)
-                            {
-                                printf("no entry found in results for a job request %s\n", uuid.c_str());
-                            }
-                        }
-
-                        free(encoded);
-                    }
-
-                    free(output);
-                }
-
-                free(image_buffer);
-
-                delete img;
-                delete c;
-            }
-
-            //the X-Y-VZ plot
-            {
-                global_hist.XYVZ->SetStats(false);
-                global_hist.XYVZ->GetXaxis()->SetTitle("X [kpc]");
-                global_hist.XYVZ->GetYaxis()->SetTitle("Y [kpc]");
-                global_hist.XYVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
-                SetView3D(global_hist.XYVZ);
-
-                std::lock_guard lock(root_mtx);
-                //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-                TCanvas *c = new TCanvas("", "", 600, 600);
-                c->SetBatch(true);
-                c->SetGrid(true);
-                global_hist.XYVZ->Draw("ISO");
-                c->SetRightMargin(0.13);
-
-                TImage *img = TImage::Create();
-                img->FromPad(c);
-
-                char *image_buffer;
-                int image_size;
-
-                img->GetImageBuffer(&image_buffer, &image_size);
-                std::cout << "X-Y-VZ plot PNG graphic size: " << image_size << std::endl;
-
-                //base64 conversion
-                char *output = base64((const unsigned char *)image_buffer, image_size);
-
-                if (output != NULL)
-                {
-                    char *encoded = json_encode_string(output);
-
-                    if (encoded != NULL)
-                    {
-                        std::lock_guard res_lock(results_mtx);
-
-                        //send json via websockets
-                        try
-                        {
-                            //send completed search jobs via websockets
-                            std::ostringstream json;
-
-                            json << "{";
-                            json << "\"type\" : \"plot\",";
-                            /*json << "\"thread\" : " << (max_threads + 1) << ",";
-                        json << "\"total\" : " << (max_threads + 1) << ",";*/
-                            json << "\"thread\" : " << (6) << ",";
-                            //json << "\"total\" : " << (1) << ",";
-                            json << "\"density_plot\" : " << encoded;
-                            json << "}";
-
-                            std::lock_guard lock(progress_mtx);
-                            auto ws = progress_list.at(uuid);
-
-                            ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-                            //remove the results
-                            results.erase(uuid);
-                        }
-                        catch (const std::out_of_range &err)
-                        {
-                            printf("no websocket connection found for a job request %s\n", uuid.c_str());
-
-                            try
-                            {
-                                auto result = results.at(uuid);
-                                result->xyvz = std::string(encoded);
-                            }
-                            catch (const std::out_of_range &err)
-                            {
-                                printf("no entry found in results for a job request %s\n", uuid.c_str());
-                            }
-                        }
-
-                        free(encoded);
-                    }
-
-                    free(output);
-                }
-
-                free(image_buffer);
-
-                delete img;
-                delete c;
-            }
-
-            //the R-Z-VR plot
-            {
-                global_hist.RZVR->SetStats(false);
-                global_hist.RZVR->GetXaxis()->SetTitle("R [kpc]");
-                global_hist.RZVR->GetYaxis()->SetTitle("Z [kpc]");
-                global_hist.RZVR->GetZaxis()->SetTitle("V_{R} [km/s]");
-                SetView3D(global_hist.RZVR);
-
-                std::lock_guard lock(root_mtx);
-                //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-                TCanvas *c = new TCanvas("", "", 600, 600);
-                c->SetBatch(true);
-                c->SetGrid(true);
-                global_hist.RZVR->Draw("ISO");
-                c->SetRightMargin(0.13);
-
-                TImage *img = TImage::Create();
-                img->FromPad(c);
-
-                char *image_buffer;
-                int image_size;
-
-                img->GetImageBuffer(&image_buffer, &image_size);
-                std::cout << "R-Z-VR plot PNG graphic size: " << image_size << std::endl;
-
-                //base64 conversion
-                char *output = base64((const unsigned char *)image_buffer, image_size);
-
-                if (output != NULL)
-                {
-                    char *encoded = json_encode_string(output);
-
-                    if (encoded != NULL)
-                    {
-                        std::lock_guard res_lock(results_mtx);
-
-                        //send json via websockets
-                        try
-                        {
-                            //send completed search jobs via websockets
-                            std::ostringstream json;
-
-                            json << "{";
-                            json << "\"type\" : \"plot\",";
-                            /*json << "\"thread\" : " << (max_threads + 1) << ",";
-                        json << "\"total\" : " << (max_threads + 1) << ",";*/
-                            json << "\"thread\" : " << (7) << ",";
-                            //json << "\"total\" : " << (1) << ",";
-                            json << "\"density_plot\" : " << encoded;
-                            json << "}";
-
-                            std::lock_guard lock(progress_mtx);
-                            auto ws = progress_list.at(uuid);
-
-                            ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-                            //remove the results
-                            results.erase(uuid);
-                        }
-                        catch (const std::out_of_range &err)
-                        {
-                            printf("no websocket connection found for a job request %s\n", uuid.c_str());
-
-                            try
-                            {
-                                auto result = results.at(uuid);
-                                result->rzvr = std::string(encoded);
-                            }
-                            catch (const std::out_of_range &err)
-                            {
-                                printf("no entry found in results for a job request %s\n", uuid.c_str());
-                            }
-                        }
-
-                        free(encoded);
-                    }
-
-                    free(output);
-                }
-
-                free(image_buffer);
-
-                delete img;
-                delete c;
-            }
-
-            //the R-Z-VPhi plot
-            {
-                global_hist.RZVPhi->SetStats(false);
-                global_hist.RZVPhi->GetXaxis()->SetTitle("R [kpc]");
-                global_hist.RZVPhi->GetYaxis()->SetTitle("Z [kpc]");
-                global_hist.RZVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
-                SetView3D(global_hist.RZVPhi);
-
-                std::lock_guard lock(root_mtx);
-                //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-                TCanvas *c = new TCanvas("", "", 600, 600);
-                c->SetBatch(true);
-                c->SetGrid(true);
-                global_hist.RZVPhi->Draw("ISO");
-                c->SetRightMargin(0.13);
-
-                TImage *img = TImage::Create();
-                img->FromPad(c);
-
-                char *image_buffer;
-                int image_size;
-
-                img->GetImageBuffer(&image_buffer, &image_size);
-                std::cout << "R-Z-VPhi plot PNG graphic size: " << image_size << std::endl;
-
-                //base64 conversion
-                char *output = base64((const unsigned char *)image_buffer, image_size);
-
-                if (output != NULL)
-                {
-                    char *encoded = json_encode_string(output);
-
-                    if (encoded != NULL)
-                    {
-                        std::lock_guard res_lock(results_mtx);
-
-                        //send json via websockets
-                        try
-                        {
-                            //send completed search jobs via websockets
-                            std::ostringstream json;
-
-                            json << "{";
-                            json << "\"type\" : \"plot\",";
-                            /*json << "\"thread\" : " << (max_threads + 1) << ",";
-                        json << "\"total\" : " << (max_threads + 1) << ",";*/
-                            json << "\"thread\" : " << (8) << ",";
-                            //json << "\"total\" : " << (1) << ",";
-                            json << "\"density_plot\" : " << encoded;
-                            json << "}";
-
-                            std::lock_guard lock(progress_mtx);
-                            auto ws = progress_list.at(uuid);
-
-                            ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-                            //remove the results
-                            results.erase(uuid);
-                        }
-                        catch (const std::out_of_range &err)
-                        {
-                            printf("no websocket connection found for a job request %s\n", uuid.c_str());
-
-                            try
-                            {
-                                auto result = results.at(uuid);
-                                result->rzvphi = std::string(encoded);
-                            }
-                            catch (const std::out_of_range &err)
-                            {
-                                printf("no entry found in results for a job request %s\n", uuid.c_str());
-                            }
-                        }
-
-                        free(encoded);
-                    }
-
-                    free(output);
-                }
-
-                free(image_buffer);
-
-                delete img;
-                delete c;
-            }
-
-            //the R-Z-VZ plot
-            {
-                global_hist.RZVZ->SetStats(false);
-                global_hist.RZVZ->GetXaxis()->SetTitle("R [kpc]");
-                global_hist.RZVZ->GetYaxis()->SetTitle("Z [kpc]");
-                global_hist.RZVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
-                SetView3D(global_hist.RZVZ);
-
-                std::lock_guard lock(root_mtx);
-                //gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-                TCanvas *c = new TCanvas("", "", 600, 600);
-                c->SetBatch(true);
-                c->SetGrid(true);
-                global_hist.RZVZ->Draw("ISO");
-                c->SetRightMargin(0.13);
-
-                TImage *img = TImage::Create();
-                img->FromPad(c);
-
-                char *image_buffer;
-                int image_size;
-
-                img->GetImageBuffer(&image_buffer, &image_size);
-                std::cout << "R-Z-VZ plot PNG graphic size: " << image_size << std::endl;
-
-                //base64 conversion
-                char *output = base64((const unsigned char *)image_buffer, image_size);
-
-                if (output != NULL)
-                {
-                    char *encoded = json_encode_string(output);
-
-                    if (encoded != NULL)
-                    {
-                        std::lock_guard res_lock(results_mtx);
-
-                        //send json via websockets
-                        try
-                        {
-                            //send completed search jobs via websockets
-                            std::ostringstream json;
-
-                            json << "{";
-                            json << "\"type\" : \"plot\",";
-                            /*json << "\"thread\" : " << (max_threads + 1) << ",";
-                        json << "\"total\" : " << (max_threads + 1) << ",";*/
-                            json << "\"thread\" : " << (9) << ",";
-                            //json << "\"total\" : " << (1) << ",";
-                            json << "\"density_plot\" : " << encoded;
-                            json << "}";
-
-                            std::lock_guard lock(progress_mtx);
-                            auto ws = progress_list.at(uuid);
-
-                            ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-                            //remove the results
-                            results.erase(uuid);
-                        }
-                        catch (const std::out_of_range &err)
-                        {
-                            printf("no websocket connection found for a job request %s\n", uuid.c_str());
-
-                            try
-                            {
-                                auto result = results.at(uuid);
-                                result->rzvz = std::string(encoded);
-                            }
-                            catch (const std::out_of_range &err)
-                            {
-                                printf("no entry found in results for a job request %s\n", uuid.c_str());
-                            }
-                        }
-
-                        free(encoded);
-                    }
-
-                    free(output);
-                }
-
-                free(image_buffer);
-
-                delete img;
-                delete c;
-            }
-        }
-        else
-        {
-            //purge the results
-            std::lock_guard res_lock(results_mtx);
-            results.erase(uuid);
-        }
-
-        delete global_hist.HR;
-        delete global_hist.XY;
-        delete global_hist.RZ;
-        delete global_hist.XYVR;
-        delete global_hist.XYVPhi;
-        delete global_hist.XYVZ;
-        delete global_hist.RZVR;
-        delete global_hist.RZVPhi;
-        delete global_hist.RZVZ;
-
-        std::lock_guard lock(requests_mtx);
-        requests.erase(uuid);
-    })
-        .detach();
-
-    /*std::string html = "GAIA DR2 WebQL::<ra:" + std::to_string(ra) + ", dec:" + std::to_string(dec) + ", radius:" + std::to_string(radius) + "> --> job id:" + uuid + ", hpx:" + std::to_string(idx) + ", searching pixels: ";
-
-    for (int i = 0; i < pixels->size(); i++)
-        html += std::to_string((*pixels)[i]) + " ";*/
-
-    std::string html = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
-    html.append("<link href=\"https://fonts.googleapis.com/css?family=Inconsolata\" rel=\"stylesheet\"/>\n");
-    html.append("<link href=\"https://fonts.googleapis.com/css?family=Material+Icons\" rel=\"stylesheet\"/>\n");
-    html.append("<script src=\"reconnecting-websocket.js?" VERSION_STRING "\" defer></script>\n");
-    html.append("<script src=\"//cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js\"></script>\n");
-    html.append("<script src=\"https://cdn.jsdelivr.net/gh/jvo203/fits_web_ql/htdocs/fitswebql/ra_dec_conversion.js\"></script>\n");
-
-    //bootstrap
-    html.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no, minimum-scale=1, maximum-scale=1\">\n");
-    html.append("<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\">\n");
-    html.append("<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js\"></script>\n");
-    html.append("<script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\"></script>\n");
-
-    //GAIAWebQL main JavaScript + CSS
-    html.append("<script src=\"gaiawebql.js?" VERSION_STRING "\" defer></script>\n");
-    //html.append("<link rel=\"stylesheet\" href=\"gaiawebql.css?" VERSION_STRING "\"/>\n");
-
-#ifdef PRODUCTION
-    html.append(R"(<script>var WS_SOCKET = 'wss://';</script>)");
-#else
-    html.append(R"(<script>var WS_SOCKET = 'ws://';</script>)");
-#endif
-
-    //HTML content
-    html.append("<title>GAIA DR2 WebQL</title></head><body>\n");
-    html.append("<div id='session-data' style='width: 0; height: 0;' data-search-count='" + std::to_string(pixels->size()) + "' ");
-    html.append("data-uuid='" + uuid + "' ");
-    html.append("data-ra='" + std::to_string(ra) + "' ");
-    html.append("data-dec='" + std::to_string(dec) + "' ");
-    html.append("data-radius='" + std::to_string(radius) + "' ");
-    html.append("data-where='" + where + "' ");
-    html.append("data-server-version='" + std::string(VERSION_STRING) + "' data-server-string='" + SERVER_STRING + "'></div>\n");
-
-    //add the main HTML container element
-    html.append("<div id="
-                "main"
-                " class="
-                "container"
-                ">\n");
-    //html.append("<h1>GAIA DR2 WebQL</h1>");
-    html.append("<h3 id=\"coords\"></h3>");
-    html.append("<h3 id=\"processing\">processing request; #HEALPix search pixels: " + std::to_string(pixels->size()) + "</h3>");
-    html.append("<h3 id="
-                "completed"
-                "></h3>");
-    html.append("<div class=\"progress\">");
-    html.append("<div id=\"progress-bar\" class=\"progress-bar progress-bar-info progress-bar-striped\" role=\"progressbar\" aria-valuenow=0 aria-valuemin=0 aria-valuemax=" + std::to_string(pixels->size()) + " style=\"width:0%\">0/0</div></div>");
     html.append("</div");
 
     //html.append(R"(<script>main();</script>)");
@@ -3373,16 +2096,11 @@ int main(int argc, char *argv[])
                         {
                             print_search_criteria(&search);
                             return execute_gaia(res, &search, where);
-                        }
-
-                        if (std::isnan(ra) || std::isnan(dec) || std::isnan(radius))
-                        {
-                            const std::string not_found = "ERROR: please specify valid parameters ra/dec/radius.";
+                        } else {
+                            const std::string not_found = "ERROR: please specify valid search parameters";
                             res->end(not_found.data(), not_found.length());
                             return;
-                        }
-                        else
-                            return execute_gaia_cone_search(res, ra, dec, radius, where);
+                        }                        
                     }
                     else
                     {
@@ -3413,7 +2131,7 @@ int main(int argc, char *argv[])
 
                         try
                         {
-                            std::lock_guard res_lock(results_mtx);
+                            std::lock_guard<std::mutex> res_lock(results_mtx);
                             auto result = results.at(job_id);
                             bool erase = false;
 
@@ -3590,11 +2308,11 @@ int main(int argc, char *argv[])
 
                         try
                         {
-                            std::lock_guard req_lock(requests_mtx);
+                            std::lock_guard<std::mutex> req_lock(requests_mtx);
                             auto entry = requests.at(job_id);
 
                             {
-                                std::lock_guard lock(progress_mtx);
+                                std::lock_guard<std::mutex> lock(progress_mtx);
                                 progress_list.insert(std::make_pair(job_id, ws));
 
                                 // show content:
@@ -3603,7 +2321,7 @@ int main(int argc, char *argv[])
                             }
 
                             //send all completed jobs
-                            std::lock_guard lock(entry->completed_mtx);
+                            std::lock_guard<std::mutex> lock(entry->completed_mtx);
                             size_t len = entry->completed.size();
 
                             std::ostringstream json;
@@ -3629,7 +2347,7 @@ int main(int argc, char *argv[])
                 if (job_id != NULL)
                 {
                     //remove itself from the progress_list
-                    std::lock_guard lock(progress_mtx);
+                    std::lock_guard<std::mutex> lock(progress_mtx);
                     progress_list.erase(std::string((char *)job_id));
 
                     //client leaving, abort any search under way
@@ -3637,10 +2355,10 @@ int main(int argc, char *argv[])
                     {
                         try
                         {
-                            std::lock_guard req_lock(requests_mtx);
+                            std::lock_guard<std::mutex> req_lock(requests_mtx);
                             auto entry = requests.at(std::string((char *)job_id));
 
-                            std::lock_guard lock(entry->completed_mtx);
+                            std::lock_guard<std::mutex> lock(entry->completed_mtx);
                             entry->abort = true;
                         }
                         catch (const std::out_of_range &err)

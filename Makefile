@@ -1,10 +1,10 @@
 ROOT = /home/chris/root
 SRC = src/json.c src/main.cpp src/PJMCoords.cc
-INC = -I/usr/include/postgresql -I/home/chris/Healpix_3.50/src/cxx/optimized_gcc/include `$(ROOT)/bin/root-config --cflags`
+INC = -I/usr/include/postgresql `$(ROOT)/bin/root-config --cflags`
 DEF = -DLIBUS_NO_SSL -DHAVE_INLINE
 # -D_GLIBCXX_PARALLEL
-LIBS = -lstdc++fs -lpq -luWS -lcurl -lcrypto -lssl -lz -lnuma -lpthread -luuid -L/home/chris/Healpix_3.50/src/cxx/optimized_gcc/lib -lhealpix_cxx -lcxxsupport `$(ROOT)/bin/root-config --libs`
-JEMALLOC = -L`jemalloc-config --libdir` -Wl,-rpath,`jemalloc-config --libdir` -ljemalloc `jemalloc-config --libs`
+LIBS = -lstdc++fs -lpq -luWS -lcurl -lcrypto -lssl -lz -l:libnuma.so.1 -lpthread -luuid `$(ROOT)/bin/root-config --libs`
+JEMALLOC = -L`jemalloc-config --libdir` -Wl,-rpath,`jemalloc-config --libdir` -l:libjemalloc.so.2 `jemalloc-config --libs`
 TARGET = gaiawebql
 
 dev:
