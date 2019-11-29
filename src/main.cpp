@@ -426,7 +426,7 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid, struct se
 
         //perform a whole-data search
         // and ra is not null and dec is not null and phot_g_mean_mag is not null and bp_rp is not null and pmra is not null and pmdec is not null and radial_velocity is not null
-        std::string sql = "select ra,dec,phot_g_mean_mag,bp_rp,parallax,pmra,pmdec,radial_velocity from " + entry.schema_name + "." + entry.table_name + " where parallax > 0"; // and parallax_over_error > 10;"; //" limit 1;";
+        std::string sql = "select ra,dec,phot_g_mean_mag,bp_rp,parallax,pmra,pmdec,radial_velocity from " + entry.schema_name + "." + entry.table_name + " where parallax > 0 and ra is not null and dec is not null and phot_g_mean_mag is not null and bp_rp is not null and pmra is not null and pmdec is not null and radial_velocity is not null"; // and parallax_over_error > 10;"; //" limit 1;";
 
         //add optional search conditions
         if (where != "")
