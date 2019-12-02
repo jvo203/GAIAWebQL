@@ -468,10 +468,41 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
 
             for (int i = 0; i < nRows; i++) {
               if (nFields >= 8) {
-                char *e;
-                errno = 0;
+                /*char *e;
+                errno = 0;*/
 
-                double ra = std::strtod(PQgetvalue(res, i, 0), &e);
+                std::size_t pos;
+                double ra, dec, phot_g_mean_mag, bp_rp, parallax, pmra, pmdec,
+                    radial_velocity;
+
+                bool valid_data = true;
+
+                try {
+                  ra = std::stod(std::string(PQgetvalue(res, i, 0)), &pos);
+
+                  dec = std::stod(std::string(PQgetvalue(res, i, 1)), &pos);
+
+                  phot_g_mean_mag =
+                      std::stod(std::string(PQgetvalue(res, i, 2)), &pos);
+
+                  bp_rp = std::stod(std::string(PQgetvalue(res, i, 3)), &pos);
+
+                  parallax =
+                      std::stod(std::string(PQgetvalue(res, i, 4)), &pos);
+
+                  pmra = std::stod(std::string(PQgetvalue(res, i, 5)), &pos);
+
+                  pmdec = std::stod(std::string(PQgetvalue(res, i, 6)), &pos);
+
+                  radial_velocity =
+                      std::stod(std::string(PQgetvalue(res, i, 7)), &pos);
+                } catch (const std::out_of_range &err) {
+                  valid_data = false;
+                } catch (const std::invalid_argument &err) {
+                  valid_data = false;
+                }
+
+                /*double ra = std::strtod(PQgetvalue(res, i, 0), &e);
                 if (*e != '\0' || // error, we didn't consume the entire string
                     errno != 0)   // error, overflow or underflow
                   ra = NAN;
@@ -509,12 +540,13 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
                 double radial_velocity = std::strtod(PQgetvalue(res, i, 7), &e);
                 if (*e != '\0' || // error, we didn't consume the entire string
                     errno != 0)   // error, overflow or underflow
-                  radial_velocity = NAN;
+                  radial_velocity = NAN;*/
 
-                if (!std::isnan(ra) && !std::isnan(dec) &&
+                /*if (!std::isnan(ra) && !std::isnan(dec) &&
                     !std::isnan(phot_g_mean_mag) && !std::isnan(bp_rp) &&
                     !std::isnan(parallax) && !std::isnan(pmra) &&
-                    !std::isnan(pmdec) && !std::isnan(radial_velocity)) {
+                    !std::isnan(pmdec) && !std::isnan(radial_velocity))*/
+                if (valid_data) {
                   double M_G =
                       phot_g_mean_mag + 5.0 + 5.0 * log10(parallax / 1000.0);
 
