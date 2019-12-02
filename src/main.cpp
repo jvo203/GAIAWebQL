@@ -497,8 +497,18 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
                   radial_velocity =
                       std::stod(std::string(PQgetvalue(res, i, 7)), &pos);
                 } catch (const std::out_of_range &err) {
+                  printf("(%s) (%s) (%s) (%s) (%s) (%s) (%s) (%s)\n",
+                         PQgetvalue(res, i, 0), PQgetvalue(res, i, 1),
+                         PQgetvalue(res, i, 2), PQgetvalue(res, i, 3),
+                         PQgetvalue(res, i, 4), PQgetvalue(res, i, 5),
+                         PQgetvalue(res, i, 6), PQgetvalue(res, i, 7));
                   valid_data = false;
                 } catch (const std::invalid_argument &err) {
+                  printf("(%s) (%s) (%s) (%s) (%s) (%s) (%s) (%s)\n",
+                         PQgetvalue(res, i, 0), PQgetvalue(res, i, 1),
+                         PQgetvalue(res, i, 2), PQgetvalue(res, i, 3),
+                         PQgetvalue(res, i, 4), PQgetvalue(res, i, 5),
+                         PQgetvalue(res, i, 6), PQgetvalue(res, i, 7));
                   valid_data = false;
                 }
 
