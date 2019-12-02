@@ -392,7 +392,7 @@ void load_db_index(std::string filename) {
 
 bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
                     struct search_criteria *search, std::string where,
-                    OmniCoords &coords,
+                    OmniCoords *coords,
                     boost::lockfree::stack<struct plot_data> &plot_stack,
                     struct global_search& queue
                     /*,
@@ -593,11 +593,11 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
                   sHEQ[4] = pmra;
                   sHEQ[5] = pmdec;
 
-                  coords.take_HEQ_units(sHEQ);
-                  sGCA = coords.give_GCA_units();
+                  coords->take_HEQ_units(sHEQ);
+                  sGCA = coords->give_GCA_units();
 
-                  coords.take_HEQ_units(sHEQ);
-                  sGCY = coords.give_GCY_units();
+                  coords->take_HEQ_units(sHEQ);
+                  sGCY = coords->give_GCY_units();
 
                   double X = sGCA[0]; //[kpc]
                   double Y = sGCA[1]; //[kpc]
@@ -772,7 +772,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search,
     int max_threads = omp_get_max_threads();
     // std::vector<std::shared_ptr<struct gaia_hist>> thread_hist;
     // //(max_threads);
-    std::vector<OmniCoords> thread_coords(max_threads);
+    std::vector<OmniCoords *> thread_coords(max_threads);
 
     struct gaia_hist global_hist;
     char name[255];
@@ -825,7 +825,8 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search,
     global_hist.RZVZ->SetCanExtend(TH1::kAllAxes);
 
     for (int i = 0; i < max_threads; i++) {
-      thread_coords[i].change_sol_pos(8.3, 0.027);
+      thread_coords[i] = new OmniCoords();
+      thread_coords[i]->change_sol_pos(8.3, 0.027);
 
       char name[255];
       sprintf(name, "%s/%d", uuid.c_str(), (i + 1));
@@ -916,6 +917,9 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search,
     }
 
     printf("OpenMP parallel for loop done.\n");
+
+    for (int i = 0; i < max_threads; i++)
+      delete thread_coords[i];
 
     search_done = true;
     plot_thread.join();
