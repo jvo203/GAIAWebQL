@@ -104,7 +104,7 @@ struct search_criteria {
   }
 };
 
-void print_search_criteria(struct search_criteria *search) {
+void print_search_criteria(std::shared_ptr<struct search_criteria> search) {
   printf("X: [%f - %f]\n", search->X_min, search->X_max);
   printf("Y: [%f - %f]\n", search->Y_min, search->Y_max);
   printf("Z: [%f - %f]\n", search->Z_min, search->Z_max);
@@ -397,7 +397,7 @@ void load_db_index(std::string filename) {
 }
 
 bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string uuid,
-                    struct search_criteria *search, std::string where,
+                    std::shared_ptr<struct search_criteria> search, std::string where,
                     OmniCoords *coords,
                     boost::lockfree::stack<struct plot_data> &plot_stack,
                     struct global_search& queue
@@ -767,7 +767,8 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
   return abort_search;
 }
 
-void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search,
+void execute_gaia(uWS::HttpResponse *res,
+                  std::shared_ptr<struct search_criteria> search,
                   std::string where) {
   std::string uuid = []() -> std::string {
     uuid_t binuuid;
@@ -1919,7 +1920,7 @@ int main(int argc, char *argv[]) {
                 double radius = NAN;
                 std::string where;
 
-                struct search_criteria search {};
+                auto search = std::make_shared<struct search_criteria>();
                 bool valid_params = false;
 
                 // using std::string for now as std::string_view is broken
@@ -1945,11 +1946,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.X_min = std::strtod(value.c_str(), &e);
+                      search->X_min = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.X_min = NAN;
+                        search->X_min = NAN;
                       else
                         valid_params = true;
                     }
@@ -1958,11 +1959,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.X_max = std::strtod(value.c_str(), &e);
+                      search->X_max = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.X_max = NAN;
+                        search->X_max = NAN;
                       else
                         valid_params = true;
                     }
@@ -1971,11 +1972,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.Y_min = std::strtod(value.c_str(), &e);
+                      search->Y_min = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.Y_min = NAN;
+                        search->Y_min = NAN;
                       else
                         valid_params = true;
                     }
@@ -1984,11 +1985,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.Y_max = std::strtod(value.c_str(), &e);
+                      search->Y_max = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.Y_max = NAN;
+                        search->Y_max = NAN;
                       else
                         valid_params = true;
                     }
@@ -1997,11 +1998,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.Z_min = std::strtod(value.c_str(), &e);
+                      search->Z_min = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.Z_min = NAN;
+                        search->Z_min = NAN;
                       else
                         valid_params = true;
                     }
@@ -2010,11 +2011,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.Z_max = std::strtod(value.c_str(), &e);
+                      search->Z_max = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.Z_max = NAN;
+                        search->Z_max = NAN;
                       else
                         valid_params = true;
                     }
@@ -2023,11 +2024,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.R_min = std::strtod(value.c_str(), &e);
+                      search->R_min = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.R_min = NAN;
+                        search->R_min = NAN;
                       else
                         valid_params = true;
                     }
@@ -2036,11 +2037,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.R_max = std::strtod(value.c_str(), &e);
+                      search->R_max = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.R_max = NAN;
+                        search->R_max = NAN;
                       else
                         valid_params = true;
                     }
@@ -2049,11 +2050,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.Phi_min = std::strtod(value.c_str(), &e);
+                      search->Phi_min = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.Phi_min = NAN;
+                        search->Phi_min = NAN;
                       else
                         valid_params = true;
                     }
@@ -2062,11 +2063,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.Phi_max = std::strtod(value.c_str(), &e);
+                      search->Phi_max = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.Phi_max = NAN;
+                        search->Phi_max = NAN;
                       else
                         valid_params = true;
                     }
@@ -2075,11 +2076,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.M_G_min = std::strtod(value.c_str(), &e);
+                      search->M_G_min = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.M_G_min = NAN;
+                        search->M_G_min = NAN;
                       else
                         valid_params = true;
                     }
@@ -2088,11 +2089,11 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.M_G_max = std::strtod(value.c_str(), &e);
+                      search->M_G_max = std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.M_G_max = NAN;
+                        search->M_G_max = NAN;
                       else
                         valid_params = true;
                     }
@@ -2101,12 +2102,12 @@ int main(int argc, char *argv[]) {
                       char *e;
                       errno = 0;
 
-                      search.parallax_error_min =
+                      search->parallax_error_min =
                           std::strtod(value.c_str(), &e);
                       if (*e != '\0' || // error, we didn't consume the entire
                                         // string
                           errno != 0)   // error, overflow or underflow
-                        search.parallax_error_min = NAN;
+                        search->parallax_error_min = NAN;
                       else
                         valid_params = true;
                     }
@@ -2168,8 +2169,8 @@ int main(int argc, char *argv[]) {
                 std::cout << std::endl;
 
                 if (valid_params) {
-                  print_search_criteria(&search);
-                  return execute_gaia(res, &search, where);
+                  print_search_criteria(search);
+                  return execute_gaia(res, search, where);
                 } else {
                   const std::string not_found =
                       "ERROR: please specify valid search parameters";
