@@ -146,9 +146,18 @@ struct db_entry {
   std::string owner;
   std::string host;
   int port;
+
+  db_entry(std::string _schema_name, std::string _table_name,
+           std::string _owner, std::string _host, int _port) {
+    schema_name = _schema_name;
+    table_name = _table_name;
+    owner = _owner;
+    host = _host;
+    port = _port;
+  }
 };
 
-std::unordered_map<int, struct db_entry> db_index;
+std::unordered_map<int, std::shared_ptr<struct db_entry>> db_index;
 
 struct db_search_job {
   // steady_clock::time_point timestamp = steady_clock::now();
@@ -372,16 +381,19 @@ void load_db_index(std::string filename) {
     // extract the database connection info based on the healpix index
     if (columns.size() == 6) {
       int hpx;
-      struct db_entry entry;
+      // struct db_entry entry {};
 
-      entry.schema_name = columns[0];
+      /*entry.schema_name = columns[0];
       entry.table_name = columns[1];
       entry.owner = columns[3];
       entry.host = columns[4];
-      entry.port = std::stoi(columns[5]);
+      entry.port = std::stoi(columns[5]);*/
 
-      sscanf(entry.table_name.c_str(), "gaia_source_%d", &hpx);
+      sscanf(columns[1].c_str(), "gaia_source_%d", &hpx);
 
+      std::shared_ptr<struct db_entry> entry(
+          new db_entry(columns[0], columns[1], columns[3], columns[4],
+                       std::stoi(columns[5])));
       db_index.insert(std::make_pair(hpx, entry));
     }
   }
@@ -390,7 +402,7 @@ void load_db_index(std::string filename) {
             << " entries." << std::endl;
 }
 
-bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
+bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string uuid,
                     struct search_criteria *search, std::string where,
                     OmniCoords *coords,
                     boost::lockfree::stack<struct plot_data> &plot_stack,
@@ -400,12 +412,12 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
   std::stringstream msg;
   bool abort_search = false;
 
-  msg << uuid << ":\t" << entry.schema_name << "/" << entry.table_name << "/"
-      << entry.owner << "/" << entry.host << ":" << entry.port << "\t";
+  msg << uuid << ":\t" << entry->schema_name << "/" << entry->table_name << "/"
+      << entry->owner << "/" << entry->host << ":" << entry->port << "\t";
 
-  std::string conn_str = "dbname=gaiadr2 host=" + entry.host +
-                         " port=" + std::to_string(entry.port) +
-                         " user=" + entry.owner + " password=jvo!";
+  std::string conn_str = "dbname=gaiadr2 host=" + entry->host +
+                         " port=" + std::to_string(entry->port) +
+                         " user=" + entry->owner + " password=jvo!";
 
   PGconn *gaia_db = PQconnectdb(conn_str.c_str());
   uint64_t count = 0;
@@ -428,7 +440,7 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
     std::string sql = "select "
                       "ra,dec,phot_g_mean_mag,bp_rp,parallax,pmra,pmdec,radial_"
                       "velocity from " +
-                      entry.schema_name + "." + entry.table_name +
+                      entry->schema_name + "." + entry->table_name +
                       " where parallax > 0 and ra is not null and dec is not "
                       "null and phot_g_mean_mag is not null and bp_rp is not "
                       "null and pmra is not null and pmdec is not null and "
@@ -471,8 +483,8 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
                 if (count == 1)
                   printf("%s/%s/%s/%s:%d\t(%s) (%s) (%s) (%s) (%s) (%s) (%s) "
                          "(%s)\n",
-                         entry.schema_name.c_str(), entry.table_name.c_str(),
-                         entry.owner.c_str(), entry.host.c_str(), entry.port,
+                         entry->schema_name.c_str(), entry->table_name.c_str(),
+                         entry->owner.c_str(), entry->host.c_str(), entry->port,
                          PQgetvalue(res, i, 0), PQgetvalue(res, i, 1),
                          PQgetvalue(res, i, 2), PQgetvalue(res, i, 3),
                          PQgetvalue(res, i, 4), PQgetvalue(res, i, 5),
@@ -624,9 +636,10 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
                     printf("%s/%s/%s/%s:%d\tcoords\tX(%f) Y(%f) Z(%f) R(%f) "
                            "Phi(%f) VR(%f) VZ(%f) "
                            "VPhi(%f)\n",
-                           entry.schema_name.c_str(), entry.table_name.c_str(),
-                           entry.owner.c_str(), entry.host.c_str(), entry.port,
-                           X, Y, Z, R, Phi, VR, VZ, VPhi);
+                           entry->schema_name.c_str(),
+                           entry->table_name.c_str(), entry->owner.c_str(),
+                           entry->host.c_str(), entry->port, X, Y, Z, R, Phi,
+                           VR, VZ, VPhi);
 
                   bool data_ok = true;
 
@@ -709,8 +722,8 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
         std::copy(local_queue.begin(), local_queue.end(), queue.queue.end());
         queue.queue.resize(queue.queue.size() + local_queue.size());
 
-        std::cout << entry.schema_name << "/" << entry.table_name << "/"
-                  << entry.owner << "/" << entry.host << ":" << entry.port
+        std::cout << entry->schema_name << "/" << entry->table_name << "/"
+                  << entry->owner << "/" << entry->host << ":" << entry->port
                   << "\t"
                   << " copied " << local_queue.size()
                   << " records; queue.queue.length(): " << queue.queue.size()
@@ -794,7 +807,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search,
     // //(max_threads);
     std::vector<OmniCoords *> thread_coords(max_threads);
 
-    struct gaia_hist global_hist;
+    struct gaia_hist global_hist {};
     char name[255];
 
     sprintf(name, "%s/HR", uuid.c_str());
@@ -861,7 +874,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search,
       // gaia_hist>(std::move(hist)));
     }
 
-    struct global_search queue;
+    struct global_search queue {};
 
     boost::lockfree::stack<struct plot_data> plot_stack(100000);
     boost::atomic<bool> search_done(false);
@@ -870,7 +883,7 @@ void execute_gaia(uWS::HttpResponse *res, struct search_criteria *search,
       std::cout << "starting a histogram thread function.\n";
 
       unsigned long counter = 0;
-      struct plot_data data;
+      struct plot_data data {};
 
       auto plotter = [&](struct plot_data data) {
         global_hist.HR->Fill(data.bp_rp, data.M_G);
@@ -1911,7 +1924,7 @@ int main(int argc, char *argv[]) {
                 double radius = NAN;
                 std::string where;
 
-                struct search_criteria search;
+                struct search_criteria search {};
                 bool valid_params = false;
 
                 // using std::string for now as std::string_view is broken
