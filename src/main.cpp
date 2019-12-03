@@ -468,6 +468,15 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
 
             for (int i = 0; i < nRows; i++) {
               if (nFields >= 8) {
+                if (count == 1)
+                  printf("%s/%s/%s/%s:%d\t(%s) (%s) (%s) (%s) (%s) (%s) (%s) "
+                         "(%s)\n",
+                         entry.schema_name.c_str(), entry.table_name.c_str(),
+                         entry.owner.c_str(), entry.host.c_str(), entry.port,
+                         PQgetvalue(res, i, 0), PQgetvalue(res, i, 1),
+                         PQgetvalue(res, i, 2), PQgetvalue(res, i, 3),
+                         PQgetvalue(res, i, 4), PQgetvalue(res, i, 5),
+                         PQgetvalue(res, i, 6), PQgetvalue(res, i, 7));
                 /*char *e;
                 errno = 0;*/
 
@@ -685,9 +694,10 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
       if (local_queue.size() > 0) {
         // append local queue data to the mutex-protected global queue
         std::lock_guard<std::mutex> lock(queue.queue_mtx);
-        queue.queue.resize(queue.queue.size() +
-                           local_queue.size()); // replaced reserve with resize
+        queue.queue.reserve(queue.queue.size() +
+                            local_queue.size()); // replaced reserve with resize
         std::copy(local_queue.begin(), local_queue.end(), queue.queue.end());
+        queue.queue.resize(queue.queue.size() + local_queue.size());
 
         std::cout << entry.schema_name << "/" << entry.table_name << "/"
                   << entry.owner << "/" << entry.host << ":" << entry.port
