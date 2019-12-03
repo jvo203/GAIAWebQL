@@ -381,19 +381,13 @@ void load_db_index(std::string filename) {
     // extract the database connection info based on the healpix index
     if (columns.size() == 6) {
       int hpx;
-      // struct db_entry entry {};
-
-      /*entry.schema_name = columns[0];
-      entry.table_name = columns[1];
-      entry.owner = columns[3];
-      entry.host = columns[4];
-      entry.port = std::stoi(columns[5]);*/
 
       sscanf(columns[1].c_str(), "gaia_source_%d", &hpx);
 
       std::shared_ptr<struct db_entry> entry(
           new db_entry(columns[0], columns[1], columns[3], columns[4],
                        std::stoi(columns[5])));
+
       db_index.insert(std::make_pair(hpx, entry));
     }
   }
@@ -614,11 +608,12 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
                   sHEQ[4] = pmra;
                   sHEQ[5] = pmdec;
 
-                  // sGCA = coords->GCAfromHEQ(sHEQ);
+                  sGCA = coords->GCAfromHEQ(sHEQ);
+                  sGCY = coords->GCYfromHEQ(sHEQ);
+
                   /*coords->take_HEQ_units(sHEQ);
                   sGCA = coords->give_GCA_units();*/
 
-                  // sGCY = coords->GCYfromHEQ(sHEQ);
                   /*coords->take_HEQ_units(sHEQ);
                   sGCY = coords->give_GCY_units();*/
 
@@ -644,7 +639,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
                   bool data_ok = true;
 
                   // validate data against the search critera
-                  /*if (!std::isnan(search->X_min))
+                  if (!std::isnan(search->X_min))
                     if (X < search->X_min)
                       data_ok = false;
 
@@ -690,7 +685,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
 
                   if (!std::isnan(search->M_G_max))
                     if (M_G > search->M_G_max)
-                      data_ok = false;*/
+                      data_ok = false;
 
                   // the data is OK, add values to histograms
                   if (data_ok) {
@@ -699,8 +694,8 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
 
                     local_queue.push_back(data);
 
-                    /*while (!plot_stack.push(data))
-                      ;*/
+                    while (!plot_stack.push(data))
+                      ;
 
                     // printf("added struct plot_data\n");
                   }
