@@ -602,11 +602,13 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
                   sHEQ[4] = pmra;
                   sHEQ[5] = pmdec;
 
-                  coords->take_HEQ_units(sHEQ);
-                  sGCA = coords->give_GCA_units();
+                  // sGCA = coords->GCAfromHEQ(sHEQ);
+                  /*coords->take_HEQ_units(sHEQ);
+                  sGCA = coords->give_GCA_units();*/
 
-                  coords->take_HEQ_units(sHEQ);
-                  sGCY = coords->give_GCY_units();
+                  // sGCY = coords->GCYfromHEQ(sHEQ);
+                  /*coords->take_HEQ_units(sHEQ);
+                  sGCY = coords->give_GCY_units();*/
 
                   double X = sGCA[0]; //[kpc]
                   double Y = sGCA[1]; //[kpc]
@@ -618,10 +620,18 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
                   double VZ = sGCY[4];   //[km/s]
                   double VPhi = sGCY[5]; //[km/s]
 
+                  if (count == 1)
+                    printf("%s/%s/%s/%s:%d\tcoords\tX(%f) Y(%f) Z(%f) R(%f) "
+                           "Phi(%f) VR(%f) VZ(%f) "
+                           "VPhi(%f)\n",
+                           entry.schema_name.c_str(), entry.table_name.c_str(),
+                           entry.owner.c_str(), entry.host.c_str(), entry.port,
+                           X, Y, Z, R, Phi, VR, VZ, VPhi);
+
                   bool data_ok = true;
 
                   // validate data against the search critera
-                  if (!std::isnan(search->X_min))
+                  /*if (!std::isnan(search->X_min))
                     if (X < search->X_min)
                       data_ok = false;
 
@@ -667,7 +677,7 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
 
                   if (!std::isnan(search->M_G_max))
                     if (M_G > search->M_G_max)
-                      data_ok = false;
+                      data_ok = false;*/
 
                   // the data is OK, add values to histograms
                   if (data_ok) {
@@ -676,8 +686,8 @@ bool search_gaia_db(int hpx, struct db_entry &entry, std::string uuid,
 
                     local_queue.push_back(data);
 
-                    while (!plot_stack.push(data))
-                      ;
+                    /*while (!plot_stack.push(data))
+                      ;*/
 
                     // printf("added struct plot_data\n");
                   }
