@@ -1,28 +1,3 @@
-function randomise_gaia() {
-    /*var timestamp = new Date();
-    var Id = 500 + timestamp.getUTCMilliseconds();
-
-    var datasetId = "ALMA0101" + pad(Id.toString(), 4);
-    document.getElementById("datasetid").value = datasetId;
-
-    view_gaia();*/
-}
-
-function view_gaia_ra_dec() {
-    var ra = document.getElementById("ra").value;
-    var dec = document.getElementById("dec").value;
-    var radius = document.getElementById("radius").value;
-    var where = document.getElementById("where_ra_dec").value.trim();
-
-    var url = "/gaiawebql/GAIAWebQL.html?" + "ra=" + encodeURIComponent(ra) + "&dec=" + encodeURIComponent(dec) + "&radius=" + encodeURIComponent(radius);
-
-    if (where != "")
-        url += "&where=" + encodeURIComponent(where);
-
-    window.location.href = url;
-
-}
-
 function reset_gaia() {
     document.getElementById("xmin").value = "";
     document.getElementById("xmax").value = "";
