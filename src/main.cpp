@@ -425,7 +425,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
   } else {
     printf("PostgreSQL connection successful.\n");
 
-    std::vector<struct plot_data> local_queue;
+    // std::vector<struct plot_data> local_queue;
 
     // perform a whole-data search
     // and ra is not null and dec is not null and phot_g_mean_mag is not null
@@ -474,15 +474,6 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
 
             for (int i = 0; i < nRows; i++) {
               if (nFields >= 8) {
-                if (count == 1)
-                  printf("%s/%s/%s/%s:%d\t(%s) (%s) (%s) (%s) (%s) (%s) (%s) "
-                         "(%s)\n",
-                         entry->schema_name.c_str(), entry->table_name.c_str(),
-                         entry->owner.c_str(), entry->host.c_str(), entry->port,
-                         PQgetvalue(res, i, 0), PQgetvalue(res, i, 1),
-                         PQgetvalue(res, i, 2), PQgetvalue(res, i, 3),
-                         PQgetvalue(res, i, 4), PQgetvalue(res, i, 5),
-                         PQgetvalue(res, i, 6), PQgetvalue(res, i, 7));
                 /*char *e;
                 errno = 0;*/
 
@@ -584,22 +575,6 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
                   double delta = dec * HTMfunc_Pr; //[rad]
                   double d = 1000.0 / parallax;    // distance [parsec, pc]
 
-                  /*double rICRS[3] = {d * cos(alpha) * cos(delta), d *
-                  sin(alpha) * cos(delta), d * sin(delta)}; double rGC[3] =
-                  {0.0, 0.0, 0.0}; double r[3] = {-dGC, 0.0, 0.0};
-
-                  for (int i = 0; i < 3; i++)
-                      for (int j = 0; j < 3; j++)
-                          r[i] += R[i][j] * rICRS[j];
-
-                  for (int i = 0; i < 3; i++)
-                      for (int j = 0; j < 3; j++)
-                          rGC[i] += H[i][j] * r[j];
-
-                  double x = rGC[0];
-                  double y = rGC[1];
-                  double z = rGC[2];*/
-
                   vec6 sHEQ, sGCA, sGCY;
                   sHEQ[0] = d / 1000.0;      //[kpc]
                   sHEQ[1] = ra;              //[deg]
@@ -611,12 +586,6 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
                   sGCA = coords->GCAfromHEQ(sHEQ);
                   sGCY = coords->GCYfromHEQ(sHEQ);
 
-                  /*coords->take_HEQ_units(sHEQ);
-                  sGCA = coords->give_GCA_units();*/
-
-                  /*coords->take_HEQ_units(sHEQ);
-                  sGCY = coords->give_GCY_units();*/
-
                   double X = sGCA[0]; //[kpc]
                   double Y = sGCA[1]; //[kpc]
                   double Z = sGCA[2]; //[kpc]
@@ -626,15 +595,6 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
                   double VR = sGCY[3];   //[km/s]
                   double VZ = sGCY[4];   //[km/s]
                   double VPhi = sGCY[5]; //[km/s]
-
-                  if (count == 1)
-                    printf("%s/%s/%s/%s:%d\tcoords\tX(%f) Y(%f) Z(%f) R(%f) "
-                           "Phi(%f) VR(%f) VZ(%f) "
-                           "VPhi(%f)\n",
-                           entry->schema_name.c_str(),
-                           entry->table_name.c_str(), entry->owner.c_str(),
-                           entry->host.c_str(), entry->port, X, Y, Z, R, Phi,
-                           VR, VZ, VPhi);
 
                   bool data_ok = true;
 
@@ -692,7 +652,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
                     struct plot_data data = {bp_rp, M_G, X,    Y, Z,
                                              R,     VR,  VPhi, VZ};
 
-                    local_queue.push_back(data);
+                    // local_queue.push_back(data);
 
                     while (!plot_stack.push(data))
                       ;
@@ -709,7 +669,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
       } else
         std::cout << "error setting PQsetSingleRowMode.\n";
 
-      if (local_queue.size() > 0) {
+      /*if (local_queue.size() > 0) {
         // append local queue data to the mutex-protected global queue
         std::lock_guard<std::mutex> lock(queue.queue_mtx);
         queue.queue.reserve(queue.queue.size() +
@@ -724,7 +684,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
                   << " records; queue.queue.length(): " << queue.queue.size()
                   << std::endl;
         ;
-      }
+      }*/
     } else
       std::cout << "PQsendQuery error.\n";
   }
