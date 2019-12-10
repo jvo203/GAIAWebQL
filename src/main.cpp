@@ -2121,7 +2121,6 @@ int main(int argc, char *argv[]) {
                   std::stringstream sstream;
                   sstream << std::hex << id;
                   std::string uuid = sstream.str();
-                  // std::string uuid = std::to_string(id);
 
                   return execute_gaia(res, search, where, uuid);
                 } else {
