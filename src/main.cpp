@@ -729,21 +729,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
 
 void execute_gaia(uWS::HttpResponse *res,
                   std::shared_ptr<struct search_criteria> search,
-                  std::string where) {
-  std::string uuid = []() -> std::string {
-    uuid_t binuuid;
-    uuid_generate(binuuid);
-    char *uuid = (char *)malloc(37);
-
-    if (uuid != NULL) {
-      uuid_unparse(binuuid, uuid);
-      std::string uuid_str(uuid);
-      free(uuid);
-      return uuid_str;
-    } else
-      return std::string("NULL");
-  }();
-
+                  std::string where, std::string uuid) {
   {
     std::lock_guard<std::mutex> req_lock(requests_mtx);
     requests.insert(
@@ -2130,7 +2116,21 @@ int main(int argc, char *argv[]) {
 
                 if (valid_params) {
                   print_search_criteria(search);
-                  return execute_gaia(res, search, where);
+                  std::string uuid = []() -> std::string {
+                    uuid_t binuuid;
+                    uuid_generate(binuuid);
+                    char *uuid = (char *)malloc(37);
+
+                    if (uuid != NULL) {
+                      uuid_unparse(binuuid, uuid);
+                      std::string uuid_str(uuid);
+                      free(uuid);
+                      return uuid_str;
+                    } else
+                      return std::string("NULL");
+                  }();
+
+                  return execute_gaia(res, search, where, uuid);
                 } else {
                   const std::string not_found =
                       "ERROR: please specify valid search parameters";
