@@ -53,7 +53,6 @@ using std::chrono::steady_clock;
 
 #include <curl/curl.h>
 #include <pgsql/libpq-fe.h>
-#include <uuid/uuid.h>
 //#include "healpix_base.h"
 #include "json.h"
 
@@ -2118,7 +2117,7 @@ int main(int argc, char *argv[]) {
                   print_search_criteria(search);
 
                   std::size_t id = std::hash<std::string>{}(uri);
-                  
+
                   std::stringstream sstream;
                   sstream << std::hex << id;
                   std::string uuid = sstream.str();
