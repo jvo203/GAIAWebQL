@@ -2116,19 +2116,13 @@ int main(int argc, char *argv[]) {
 
                 if (valid_params) {
                   print_search_criteria(search);
-                  std::string uuid = []() -> std::string {
-                    uuid_t binuuid;
-                    uuid_generate(binuuid);
-                    char *uuid = (char *)malloc(37);
 
-                    if (uuid != NULL) {
-                      uuid_unparse(binuuid, uuid);
-                      std::string uuid_str(uuid);
-                      free(uuid);
-                      return uuid_str;
-                    } else
-                      return std::string("NULL");
-                  }();
+                  std::size_t id = std::hash<std::string>{}(uri);
+                  
+                  std::stringstream sstream;
+                  sstream << std::hex << id;
+                  std::string uuid = sstream.str();
+                  // std::string uuid = std::to_string(id);
 
                   return execute_gaia(res, search, where, uuid);
                 } else {
