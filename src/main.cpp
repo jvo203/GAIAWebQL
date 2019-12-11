@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2019-12-02.0"
+#define VERSION_STRING "SV2019-12-11.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -397,7 +397,7 @@ void load_db_index(std::string filename) {
 
 bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string uuid,
                     std::shared_ptr<struct search_criteria> search, std::string where,
-                    OmniCoords *coords,
+                    std::shared_ptr<OmniCoords> coords,
                     boost::lockfree::stack<struct plot_data> &plot_stack,
                     struct global_search& queue
                     /*,
@@ -746,7 +746,7 @@ void execute_gaia(uWS::HttpResponse *res,
     int max_threads = omp_get_max_threads();
     // std::vector<std::shared_ptr<struct gaia_hist>> thread_hist;
     // //(max_threads);
-    std::vector<OmniCoords *> thread_coords(max_threads);
+    std::vector<std::shared_ptr<OmniCoords>> thread_coords(max_threads);
 
     struct gaia_hist global_hist {};
     char name[255];
@@ -799,7 +799,7 @@ void execute_gaia(uWS::HttpResponse *res,
     global_hist.RZVZ->SetCanExtend(TH1::kAllAxes);
 
     for (int i = 0; i < max_threads; i++) {
-      thread_coords[i] = new OmniCoords();
+      thread_coords[i] = std::make_shared<OmniCoords>(OmniCoords());
       thread_coords[i]->change_sol_pos(8.3, 0.027);
 
       char name[255];
@@ -891,9 +891,6 @@ void execute_gaia(uWS::HttpResponse *res,
     }
 
     printf("OpenMP parallel for loop done.\n");
-
-    for (int i = 0; i < max_threads; i++)
-      delete thread_coords[i];
 
     search_done = true;
     plot_thread.join();
