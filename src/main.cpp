@@ -917,10 +917,10 @@ void execute_gaia(uWS::HttpResponse *res,
 
       // the H-R diagram
       {
-        ReverseYData(global_hist.HR);
-        global_hist.HR->SetStats(false);
-        global_hist.HR->GetXaxis()->SetTitle("(BP-RP) [mag]");
-        global_hist.HR->GetYaxis()->SetTitle("M_{G} [mag]");
+        ReverseYData(global_hist._hr.hist);
+        global_hist._hr.hist->SetStats(false);
+        global_hist._hr.hist->GetXaxis()->SetTitle("(BP-RP) [mag]");
+        global_hist._hr.hist->GetYaxis()->SetTitle("M_{G} [mag]");
         // global_hist->GetZaxis()->SetTitle("star density");
 
         std::lock_guard<std::mutex> lock(root_mtx);
@@ -928,9 +928,9 @@ void execute_gaia(uWS::HttpResponse *res,
         TCanvas *c = new TCanvas("", "", 600, 600);
         c->SetBatch(true);
         c->SetGrid(true);
-        global_hist.HR->Draw("COLZ"); // COLZ or CONTZ
+        global_hist._hr.hist->Draw("COLZ"); // COLZ or CONTZ
         c->SetRightMargin(0.13);
-        ReverseYAxis(global_hist.HR);
+        ReverseYAxis(global_hist._hr.hist);
 
         TImage *img = TImage::Create();
         img->FromPad(c);
