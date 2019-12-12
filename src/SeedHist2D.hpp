@@ -17,7 +17,10 @@ public:
     hist = NULL;
     data.reserve(BURN_IN);
   }
-  ~SeedH2(){};
+  ~SeedH2() {
+    if (hist != NULL)
+      delete hist;
+  };
 
 public:
   void update(float _x, float _y);
