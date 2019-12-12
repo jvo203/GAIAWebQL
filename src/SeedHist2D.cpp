@@ -42,4 +42,10 @@ void SeedH2::flush() {
 
   stdX = sqrt(stdX / double(data.size()));
   stdY = sqrt(stdY / double(data.size()));
+
+  double x_min = meanX - 3.0 * stdX;
+  double x_max = meanX + 3.0 * stdX;
+
+  double y_min = meanY - 3.0 * stdY;
+  double y_max = meanY + 3.0 * stdY;
 }
