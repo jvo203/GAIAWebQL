@@ -3,7 +3,7 @@
 #include <tuple>
 #include <vector>
 
-//#include <boost/histogram.hpp>
+#include <boost/histogram.hpp>
 
 // CERN ROOT
 #include <TH2.h>
