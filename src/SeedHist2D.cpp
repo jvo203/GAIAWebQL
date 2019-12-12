@@ -52,6 +52,9 @@ void SeedH2::flush() {
   double y_min = meanY - 3.0 * stdY;
   double y_max = meanY + 3.0 * stdY;
 
+  printf("x_min: %f x_max: %f y_min: %f y_max: %f\n", x_min, x_max, y_min,
+         y_max);
+
   // allocate a new ROOT histogram
   boost::uuids::random_generator gen;
   boost::uuids::uuid id = gen();
