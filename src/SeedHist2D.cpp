@@ -1,3 +1,7 @@
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+
 #include "SeedHist2D.hpp"
 
 void SeedH2::update(float _x, float _y) {
@@ -5,6 +9,7 @@ void SeedH2::update(float _x, float _y) {
     data.push_back(std::make_tuple(_x, _y));
   else {
     // append to the histogram
+    this->hist->Fill(_x, _y);
   }
 
   if (data.size() == BURN_IN)
@@ -14,8 +19,6 @@ void SeedH2::update(float _x, float _y) {
 void SeedH2::flush() {
   if (data.size() == 0)
     return;
-
-  init_done = true;
 
   double meanX = 0.0;
   double meanY = 0.0;
@@ -50,6 +53,26 @@ void SeedH2::flush() {
   double y_max = meanY + 3.0 * stdY;
 
   // allocate a new ROOT histogram
-  this->hist = new TH2D(name, "_x <=> _y", 600, x_min, x_max,
-                        600, y_min, y_max);
+  boost::uuids::random_generator gen;
+  boost::uuids::uuid id = gen();
+  const std::string name = boost::uuids::to_string(id);
+
+  this->hist = new TH2D((const char *)name.c_str(), "_x <=> _y", 600, x_min,
+                        x_max, 600, y_min, y_max);
+
+  if (this->hist == NULL) {
+    printf("[error] TH2D histogram object cannot be created\n");
+    return;
+  }
+
+  for (auto &x : data) {
+    double _x, _y;
+    std::tie(_x, _y) = x;
+
+    hist->Fill(_x, _y);
+  }
+
+  data.clear();
+
+  init_done = true;
 }
