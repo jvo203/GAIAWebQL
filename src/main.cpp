@@ -191,7 +191,6 @@ struct gaia_hist {
   SeedH2 _xy;
   SeedH2 _rz;
 
-  TH2 *RZ;
   TH3 *XYVR;
   TH3 *XYVPhi;
   TH3 *XYVZ;
@@ -759,10 +758,6 @@ void execute_gaia(uWS::HttpResponse *res,
     global_hist._xy.set_title("X-Y");
     global_hist._rz.set_title("R-Z");
 
-    sprintf(name, "%s/RZ", uuid.c_str());
-    global_hist.RZ = new TH2D(name, "R-Z", 600, -0.1, 0.1, 600, -0.1, 0.1);
-    global_hist.RZ->SetCanExtend(TH1::kAllAxes);
-
     // 3D histograms
     sprintf(name, "%s/XYVR", uuid.c_str());
     global_hist.XYVR = new TH3D(name, "X-Y-V_{R}", 100, -0.1, 0.1, 100, -0.1,
@@ -829,7 +824,6 @@ void execute_gaia(uWS::HttpResponse *res,
         global_hist._rz.update(data.R, data.Z);
 
         // CERN ROOT
-        global_hist.RZ->Fill(data.R, data.Z);
         global_hist.XYVR->Fill(data.X, data.Y, data.VR);
         global_hist.XYVPhi->Fill(data.X, data.Y, data.VPhi);
         global_hist.XYVZ->Fill(data.X, data.Y, data.VZ);
@@ -1057,17 +1051,17 @@ void execute_gaia(uWS::HttpResponse *res,
 
       // the R-Z plot
       {
-        global_hist.RZ->SetStats(false);
-        global_hist.RZ->GetXaxis()->SetTitle("R [kpc]");
-        global_hist.RZ->GetYaxis()->SetTitle("Z [kpc]");
-        SetView2D(global_hist.RZ);
+        global_hist._rz.hist->SetStats(false);
+        global_hist._rz.hist->GetXaxis()->SetTitle("R [kpc]");
+        global_hist._rz.hist->GetYaxis()->SetTitle("Z [kpc]");
+        SetView2D(global_hist._rz.hist);
 
         std::lock_guard<std::mutex> lock(root_mtx);
         // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
         TCanvas *c = new TCanvas("", "", 600, 600);
         c->SetBatch(true);
         c->SetGrid(true);
-        global_hist.RZ->Draw("COLZ"); // COLZ or CONTZ
+        global_hist._rz->Draw("COLZ"); // COLZ or CONTZ
         c->SetRightMargin(0.13);
 
         TImage *img = TImage::Create();
@@ -1618,7 +1612,6 @@ void execute_gaia(uWS::HttpResponse *res,
       results.erase(uuid);
     }
 
-    delete global_hist.RZ;
     delete global_hist.XYVR;
     delete global_hist.XYVPhi;
     delete global_hist.XYVZ;
