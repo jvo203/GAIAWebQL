@@ -188,6 +188,9 @@ std::mutex results_mtx;
 
 struct gaia_hist {
   SeedH2 _hr;
+  SeedH2 _xy;
+  SeedH2 _rz;
+
   TH2 *HR;
   TH2 *XY;
   TH2 *RZ;
@@ -832,6 +835,8 @@ void execute_gaia(uWS::HttpResponse *res,
       auto plotter = [&](struct plot_data data) {
         // a custom solution
         global_hist._hr.update(data.bp_rp, data.M_G);
+        global_hist._xy.update(data.X, data.Y);
+        global_hist._rz.update(data.R, data.Z);
 
         // CERN ROOT
         global_hist.HR->Fill(data.bp_rp, data.M_G);
