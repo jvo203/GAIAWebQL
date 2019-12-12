@@ -1,0 +1,3 @@
+[submodule "histogram"]
+	path = histogram
+	url = https://github.com/boostorg/histogram.git
