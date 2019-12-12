@@ -757,6 +757,10 @@ void execute_gaia(uWS::HttpResponse *res,
     struct gaia_hist global_hist {};
     char name[255];
 
+    global_hist._hr.set_title("Hertzsprung-Russell diagram");
+    global_hist._xy.set_title("X-Y");
+    global_hist._rz.set_title("R-Z");
+
     sprintf(name, "%s/HR", uuid.c_str());
     global_hist.HR = new TH2D(name, "Hertzsprung-Russell diagram", 600, -1.0,
                               5.0, 600, -5.0, 15.0);

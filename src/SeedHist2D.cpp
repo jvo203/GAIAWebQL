@@ -61,8 +61,8 @@ void SeedH2::flush() {
   boost::uuids::uuid id = gen();
   const std::string name = boost::uuids::to_string(id);
 
-  this->hist = new TH2D((const char *)name.c_str(), "_x <=> _y", 600, x_min,
-                        x_max, 600, y_min, y_max);
+  this->hist = new TH2D((const char *)name.c_str(), this->title.c_str(), 600,
+                        x_min, x_max, 600, y_min, y_max);
   this->hist->SetCanExtend(TH1::kAllAxes);
 
   if (this->hist == NULL) {
