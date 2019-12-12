@@ -46,11 +46,12 @@ void SeedH2::flush() {
   stdX = sqrt(stdX / double(data.size()));
   stdY = sqrt(stdY / double(data.size()));
 
-  double x_min = meanX - 3.0 * stdX;
-  double x_max = meanX + 3.0 * stdX;
+    //leave a 10% margin of error 
+  double x_min = 1.1 * (meanX - 3.0 * stdX);
+  double x_max = 1.1 * (meanX + 3.0 * stdX);
 
-  double y_min = meanY - 3.0 * stdY;
-  double y_max = meanY + 3.0 * stdY;
+  double y_min = 1.1 * (meanY - 3.0 * stdY);
+  double y_max = 1.1 * (meanY + 3.0 * stdY);
 
   printf("x_min: %f x_max: %f y_min: %f y_max: %f\n", x_min, x_max, y_min,
          y_max);
