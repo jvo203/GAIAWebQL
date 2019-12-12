@@ -26,8 +26,10 @@ public:
   void update(float _x, float _y);
   void flush();
 
+public:
+  TH2 *hist;
+
 private:
   std::vector<std::tuple<float, float>> data;
-  TH2 *hist;
   bool init_done;
 };
