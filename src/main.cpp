@@ -191,8 +191,6 @@ struct gaia_hist {
   SeedH2 _xy;
   SeedH2 _rz;
 
-  TH2 *HR;
-  TH2 *XY;
   TH2 *RZ;
   TH3 *XYVR;
   TH3 *XYVPhi;
@@ -761,18 +759,6 @@ void execute_gaia(uWS::HttpResponse *res,
     global_hist._xy.set_title("X-Y");
     global_hist._rz.set_title("R-Z");
 
-    sprintf(name, "%s/HR", uuid.c_str());
-    global_hist.HR = new TH2D(name, "Hertzsprung-Russell diagram", 600, -1.0,
-                              5.0, 600, -5.0, 15.0);
-    /*global_hist.hr_hist = new TH2D(uuid.c_str(), "Hertzsprung-Russell
-    diagram", 600, -1.0, 5.0, 600, -1.0, 1.0);
-    global_hist.hr_hist->SetCanExtend(TH1::kAllAxes);*/
-    // global_hist.hr_hist->SetBit(TH1::kAutoBinPTwo);
-
-    sprintf(name, "%s/XY", uuid.c_str());
-    global_hist.XY = new TH2D(name, "X-Y", 600, -0.1, 0.1, 600, -0.1, 0.1);
-    global_hist.XY->SetCanExtend(TH1::kAllAxes);
-
     sprintf(name, "%s/RZ", uuid.c_str());
     global_hist.RZ = new TH2D(name, "R-Z", 600, -0.1, 0.1, 600, -0.1, 0.1);
     global_hist.RZ->SetCanExtend(TH1::kAllAxes);
@@ -843,8 +829,6 @@ void execute_gaia(uWS::HttpResponse *res,
         global_hist._rz.update(data.R, data.Z);
 
         // CERN ROOT
-        global_hist.HR->Fill(data.bp_rp, data.M_G);
-        global_hist.XY->Fill(data.X, data.Y);
         global_hist.RZ->Fill(data.R, data.Z);
         global_hist.XYVR->Fill(data.X, data.Y, data.VR);
         global_hist.XYVPhi->Fill(data.X, data.Y, data.VPhi);
@@ -913,12 +897,6 @@ void execute_gaia(uWS::HttpResponse *res,
     std::cout << "a global queue length: " << queue.queue.size() << std::endl;
 
     if (!search_aborted) {
-
-      for (int i = 0; i < max_threads; i++) {
-        // global_hist.hr_hist->Add(thread_hist[i]->hr_hist);
-        // delete thread_hist[i]->hr_hist;
-      }
-
       // the H-R diagram
       {
         ReverseYData(global_hist._hr.hist);
@@ -1001,17 +979,17 @@ void execute_gaia(uWS::HttpResponse *res,
 
       // the X-Y plot
       {
-        global_hist.XY->SetStats(false);
-        global_hist.XY->GetXaxis()->SetTitle("X [kpc]");
-        global_hist.XY->GetYaxis()->SetTitle("Y [kpc]");
-        SetView2D(global_hist.XY);
+        global_hist._xy.hist->SetStats(false);
+        global_hist._xy.hist->GetXaxis()->SetTitle("X [kpc]");
+        global_hist._xy.hist->GetYaxis()->SetTitle("Y [kpc]");
+        SetView2D(global_hist._xy.hist);
 
         std::lock_guard<std::mutex> lock(root_mtx);
         // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
         TCanvas *c = new TCanvas("", "", 600, 600);
         c->SetBatch(true);
         c->SetGrid(true);
-        global_hist.XY->Draw("COLZ"); // COLZ or CONTZ
+        global_hist._xy.hist->Draw("COLZ"); // COLZ or CONTZ
         c->SetRightMargin(0.13);
 
         TImage *img = TImage::Create();
@@ -1640,8 +1618,6 @@ void execute_gaia(uWS::HttpResponse *res,
       results.erase(uuid);
     }
 
-    delete global_hist.HR;
-    delete global_hist.XY;
     delete global_hist.RZ;
     delete global_hist.XYVR;
     delete global_hist.XYVPhi;
