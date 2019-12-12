@@ -8,7 +8,7 @@
 // CERN ROOT
 #include <TH2.h>
 
-#define BURN_IN 10000
+#define BURN_IN 100000
 
 class SeedH2 {
 public:
