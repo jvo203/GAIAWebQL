@@ -33,8 +33,8 @@ void SeedH2::flush() {
   double stdY = 0.0;
 
   for (auto &x : data) {
-    double _x = std::get<0>(x);
-    double _y = std::get<1>(x);
+    double _x, _y;
+    std::tie(_x, _y) = x;
 
     stdX += (_x - meanX) * (_x - meanX);
     stdY += (_y - meanY) * (_y - meanY);
