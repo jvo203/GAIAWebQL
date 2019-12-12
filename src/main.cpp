@@ -56,6 +56,8 @@ using std::chrono::steady_clock;
 //#include "healpix_base.h"
 #include "json.h"
 
+#include "SeedHist2D.hpp"
+
 // CERN ROOT
 #include <TCanvas.h>
 #include <TGaxis.h>
