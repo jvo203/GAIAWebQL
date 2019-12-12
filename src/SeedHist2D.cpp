@@ -48,4 +48,8 @@ void SeedH2::flush() {
 
   double y_min = meanY - 3.0 * stdY;
   double y_max = meanY + 3.0 * stdY;
+
+  // allocate a new ROOT histogram
+  this->hist = new TH2D(name, "_x <=> _y", 600, x_min, x_max,
+                        600, y_min, y_max);
 }
