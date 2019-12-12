@@ -1,5 +1,5 @@
 ROOT = /home/chris/root
-SRC = src/json.c src/main.cpp src/PJMCoords.cc
+SRC = src/json.c src/main.cpp src/SeedHist2D.cpp src/PJMCoords.cc
 INC = -Ihistogram/include -I/usr/include/postgresql `$(ROOT)/bin/root-config --cflags`
 DEF = -DLIBUS_NO_SSL -DHAVE_INLINE
 # -D_GLIBCXX_PARALLEL
