@@ -848,6 +848,10 @@ void execute_gaia(uWS::HttpResponse *res,
         counter++;
       }
 
+      global_hist._hr.hist->flush();
+      global_hist._xy.hist->flush();
+      global_hist._rz.hist->flush();
+
       std::cout << "a histogram thread ended after processing " << counter
                 << " values.\n";
     });
