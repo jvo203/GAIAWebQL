@@ -1061,7 +1061,7 @@ void execute_gaia(uWS::HttpResponse *res,
         TCanvas *c = new TCanvas("", "", 600, 600);
         c->SetBatch(true);
         c->SetGrid(true);
-        global_hist._rz->Draw("COLZ"); // COLZ or CONTZ
+        global_hist._rz.hist->Draw("COLZ"); // COLZ or CONTZ
         c->SetRightMargin(0.13);
 
         TImage *img = TImage::Create();
