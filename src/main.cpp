@@ -187,6 +187,7 @@ std::unordered_map<std::string, std::shared_ptr<struct gaia_plots>> results;
 std::mutex results_mtx;
 
 struct gaia_hist {
+  SeedH2 _hr;
   TH2 *HR;
   TH2 *XY;
   TH2 *RZ;
@@ -829,6 +830,10 @@ void execute_gaia(uWS::HttpResponse *res,
       struct plot_data data {};
 
       auto plotter = [&](struct plot_data data) {
+        // a custom solution
+        global_hist._hr.update(data.bp_rp, data.M_G);
+
+        // CERN ROOT
         global_hist.HR->Fill(data.bp_rp, data.M_G);
         global_hist.XY->Fill(data.X, data.Y);
         global_hist.RZ->Fill(data.R, data.Z);
