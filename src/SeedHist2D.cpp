@@ -46,7 +46,7 @@ void SeedH2::flush() {
   stdX = sqrt(stdX / double(data.size()));
   stdY = sqrt(stdY / double(data.size()));
 
-    //leave a 10% margin of error 
+  // leave a 10% margin of error
   double x_min = 1.1 * (meanX - 3.0 * stdX);
   double x_max = 1.1 * (meanX + 3.0 * stdX);
 
@@ -63,6 +63,7 @@ void SeedH2::flush() {
 
   this->hist = new TH2D((const char *)name.c_str(), "_x <=> _y", 600, x_min,
                         x_max, 600, y_min, y_max);
+  this->hist->SetCanExtend(TH1::kAllAxes);
 
   if (this->hist == NULL) {
     printf("[error] TH2D histogram object cannot be created\n");
