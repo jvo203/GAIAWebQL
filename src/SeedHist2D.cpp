@@ -55,9 +55,18 @@ void SeedH2::flush() {
   printf("[%s] x_min: %f x_max: %f y_min: %f y_max: %f\n", title.c_str(), x_min,
          x_max, y_min, y_max);
 
+  // make a custom histogram
+  double dx = (x_max - x_min) / double(NO_BINS);
+  double dy = (y_max - y_min) / double(NO_BINS);
+
+  for (int i = 0; i < NO_BINS + 1; i++) {
+    x_axis[i] = x_min + double(i) * dx;
+    y_axis[i] = y_min + double(i) * dy;
+  }
+
   // allocate a new Boost.Histogram
-  /*_hist = make_histogram(axis::regular<float>(600, x_min, x_max, "_x"),
-                         axis::regular<float>(600, y_min, y_max, "_y"));*/
+  /*_hist = make_histogram(axis::regular<float>(600, x_min, x_max,
+     "_x"), axis::regular<float>(600, y_min, y_max, "_y"));*/
 
   // allocate a new ROOT histogram
   boost::uuids::random_generator gen;
