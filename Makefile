@@ -15,7 +15,7 @@ dev:
 #	OMP_CANCELLATION=true ./gaiawebql
 
 gcc:
-	g++ -v -march=native -g -O3 -std=c++17 -fopenmp -fopenmp-simd -funroll-loops -ftree-vectorize -Wno-register $(DEF) $(INC) $(SRC) -o $(TARGET) $(LIBS) $(JEMALLOC)
+	g++ -march=native -g -O3 -std=c++17 -fopenmp -fopenmp-simd -funroll-loops -ftree-vectorize -Wno-register $(DEF) $(INC) $(SRC) -o $(TARGET) $(LIBS) $(JEMALLOC)
 
 test:
 	icpc -g -O3 -xCORE-AVX2 -I/usr/include/python2.7 src/PJMCoords.cc src/testAstroPy.cpp -o astropy
