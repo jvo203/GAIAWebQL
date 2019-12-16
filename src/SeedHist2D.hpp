@@ -40,7 +40,7 @@ private:
   bool init_done;
 
   // a custom histogram
-  float x_axis[NO_BINS];
-  float y_axis[NO_BINS];
+  float x_axis[NO_BINS+1];
+  float y_axis[NO_BINS+1];
   float bin_data[NO_BINS][NO_BINS];
 };
