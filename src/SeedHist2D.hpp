@@ -10,6 +10,7 @@ using namespace boost::histogram;
 #include <TH2.h>
 
 #define BURN_IN 1000000
+#define NO_BINS 600
 
 class SeedH2 {
 public:
@@ -31,10 +32,15 @@ public:
 
 public:
   TH2 *hist;
-  //histogram _hist;
+  // histogram _hist;
 
 private:
   std::string title;
   std::vector<std::tuple<float, float>> data;
   bool init_done;
+
+  // a custom histogram
+  float x_axis[NO_BINS];
+  float y_axis[NO_BINS];
+  float bin_data[NO_BINS][NO_BINS];
 };
