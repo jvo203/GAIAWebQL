@@ -3,7 +3,8 @@
 #include <tuple>
 #include <vector>
 
-//#include <boost/histogram.hpp>
+#include <boost/histogram.hpp>
+using namespace boost::histogram;
 
 // CERN ROOT
 #include <TH2.h>
@@ -30,6 +31,7 @@ public:
 
 public:
   TH2 *hist;
+  //histogram _hist;
 
 private:
   std::string title;

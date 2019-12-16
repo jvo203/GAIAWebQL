@@ -55,6 +55,10 @@ void SeedH2::flush() {
   printf("[%s] x_min: %f x_max: %f y_min: %f y_max: %f\n", title.c_str(), x_min,
          x_max, y_min, y_max);
 
+  // allocate a new Boost.Histogram
+  /*_hist = make_histogram(axis::regular<float>(600, x_min, x_max, "_x"),
+                         axis::regular<float>(600, y_min, y_max, "_y"));*/
+
   // allocate a new ROOT histogram
   boost::uuids::random_generator gen;
   boost::uuids::uuid id = gen();
