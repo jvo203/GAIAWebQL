@@ -8,7 +8,7 @@ JEMALLOC = -L`jemalloc-config --libdir` -Wl,-rpath,`jemalloc-config --libdir` -l
 TARGET = gaiawebql
 
 dev:
-	icpc -g -O3 -xCORE-AVX2 -mcmodel large -qopenmp -qopenmp-simd -qopt-streaming-stores auto -funroll-loops -ipo -std=c++17 -fp-model fast -qopt-report=5 -qopt-report-phase=vec $(DEF) $(INC) $(SRC) -o $(TARGET) $(LIBS) $(JEMALLOC) 
+	icpc -g -O3 -xCORE-AVX2 -mcmodel=large -qopenmp -qopenmp-simd -qopt-streaming-stores auto -funroll-loops -ipo -std=c++17 -fp-model fast -qopt-report=5 -qopt-report-phase=vec $(DEF) $(INC) $(SRC) -o $(TARGET) $(LIBS) $(JEMALLOC) 
 
 #	how to run:
 #	enable OpenMP for loop cancellation
