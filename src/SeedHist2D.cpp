@@ -64,6 +64,10 @@ void SeedH2::flush() {
     y_axis[i] = y_min + double(i) * dy;
   }
 
+  for (int i = 0; i < NO_BINS; i++)
+    for (int j = 0; j < NO_BINS; j++)
+      bin_data[i][j] = 0;
+
   // allocate a new Boost.Histogram
   /*_hist = make_histogram(axis::regular<float>(600, x_min, x_max,
      "_x"), axis::regular<float>(600, y_min, y_max, "_y"));*/
