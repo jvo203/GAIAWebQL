@@ -39,11 +39,8 @@ public:
     printf("created a SeedH2::%s\n", title.c_str());
   }
   ~SeedH2() {
-    // print a custom histogram
-    for (int i = 0; i < NBINS; i++)
-      for (int j = 0; j < NBINS; j++)
-        printf("%zu ", bin_data[i][j]);
-    printf("\n");
+    printf("%s x_min: %f x_max: %f; y_min: %f, y_max: %f\n", title.c_str(),
+           x_min, x_max, y_min, y_max);
 
     // deallocate the bins
     if (bin_data != NULL)
