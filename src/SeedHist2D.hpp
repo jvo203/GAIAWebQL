@@ -24,9 +24,14 @@ public:
 
     // allocate the bin memory
     bin_data = (uint64_t **)malloc(sizeof(uint64_t *) * NBINS);
+
     if (bin_data != NULL)
-      for (int i = 0; i < NBINS; i++)
+      for (int i = 0; i < NBINS; i++) {
         bin_data[i] = (uint64_t *)malloc(sizeof(uint64_t) * NBINS);
+
+        if (bin_data[i] != NULL)
+          printf("error allocating bin_data[%d]\n", i);
+      }
 
     printf("created a SeedH2::%s\n", title.c_str());
   }
@@ -37,6 +42,7 @@ public:
         printf("%zu ", bin_data[i][j]);
     printf("\n");
 
+    // deallocate the bins
     if (bin_data != NULL)
       for (int i = 0; i < NBINS; i++)
         if (bin_data[i] != NULL)
