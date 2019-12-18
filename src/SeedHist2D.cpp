@@ -58,6 +58,10 @@ void SeedH2::rebin_x(double x_min_new, double x_max_new) {
   uint64_t bins[NBINS];
 
   memset(bins, 0, NBINS * sizeof(uint64_t));
+
+  for (int i = 0; i < NBINS; i++) {
+    // get the bin centre
+  }
 }
 
 void SeedH2::rebin_y(double y_min_new, double y_max_new){};
