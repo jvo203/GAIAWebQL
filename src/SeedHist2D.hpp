@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cfloat>
+#include <string.h>
 #include <tuple>
 #include <vector>
 
@@ -30,6 +31,8 @@ public:
         bin_data[i] = (uint64_t *)malloc(sizeof(uint64_t) * NBINS);
 
         if (bin_data[i] != NULL)
+          memset(bin_data[i], 0, NBINS * sizeof(uint64_t));
+        else
           printf("error allocating bin_data[%d]\n", i);
       }
 

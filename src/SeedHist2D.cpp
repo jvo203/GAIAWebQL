@@ -57,7 +57,7 @@ void SeedH2::fill(float _x, float _y) {
 void SeedH2::rebin_x(double x_min_new, double x_max_new) {
   uint64_t bins[NBINS];
 
-  memcpy(bins, 0, NBINS * sizeof(uint64_t));
+  memset(bins, 0, NBINS * sizeof(uint64_t));
 }
 
 void SeedH2::rebin_y(double y_min_new, double y_max_new){};
@@ -109,10 +109,6 @@ void SeedH2::flush() {
     x_axis[i] = x_min + double(i) * dx;
     y_axis[i] = y_min + double(i) * dy;
   }*/
-
-  for (int i = 0; i < NBINS; i++)
-    for (int j = 0; j < NBINS; j++)
-      bin_data[i][j] = 0;
 
   for (auto &x : data) {
     double _x, _y;
