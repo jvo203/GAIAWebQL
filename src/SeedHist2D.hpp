@@ -9,7 +9,7 @@ using namespace boost::histogram;*/
 
 #define BURN_IN 1000000
 #define NBINS 600
-// cannot deal with 600*600, need to allocate the bin data dynamically
+#define SCALE 1.67
 
 class SeedH2 {
 public:
@@ -56,6 +56,8 @@ public:
 
 private:
   void fill(float _x, float _y);
+  void rebin_x(double x_min_new, double x_max_new);
+  void rebin_y(double y_min_new, double y_max_new);
 
 private:
   std::string title;

@@ -17,8 +17,32 @@ void SeedH2::update(float _x, float _y) {
 }
 
 void SeedH2::fill(float _x, float _y) {
-  if (_x < x_min || _x >= x_max || _y < y_min || _y >= y_max) {
-    // re-bin the histogram
+  if (_x < x_min) {
+    double d = x_min - _x;
+    double x_min_new = x_min - SCALE * d;
+
+    rebin_x(x_min_new, x_max);
+  }
+
+  if (_x > x_max) {
+    double d = _x - x_max;
+    double x_max_new = x_max + SCALE * d;
+
+    rebin_x(x_min, x_max_new);
+  }
+
+  if (_y < y_min) {
+    double d = y_min - _y;
+    double y_min_new = y_min - SCALE * d;
+
+    rebin_y(y_min_new, y_max);
+  }
+
+  if (_y > y_max) {
+    double d = _y - y_max;
+    double y_max_new = y_max + SCALE * d;
+
+    rebin_y(y_min, y_max_new);
   }
 
   double x = double(_x - x_min) / double(x_max - x_min);
@@ -29,6 +53,14 @@ void SeedH2::fill(float _x, float _y) {
 
   bin_data[idx][idy]++;
 }
+
+void SeedH2::rebin_x(double x_min_new, double x_max_new) {
+  uint64_t bins[NBINS];
+
+  memcpy(bins, 0, NBINS * sizeof(uint64_t));
+}
+
+void SeedH2::rebin_y(double y_min_new, double y_max_new){};
 
 void SeedH2::flush() {
   if (data.size() == 0)
