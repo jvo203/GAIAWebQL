@@ -1,9 +1,8 @@
-ROOT = /home/chris/root
 SRC = src/json.c src/main.cpp src/SeedHist2D.cpp src/PJMCoords.cc
-INC = -I/usr/include/postgresql `$(ROOT)/bin/root-config --cflags`
+INC = -I/usr/include/postgresql
 DEF = -DLIBUS_NO_SSL -DHAVE_INLINE
 # -D_GLIBCXX_PARALLEL
-LIBS = -lstdc++fs -lpq -luWS -lcurl -lcrypto -lssl -lz -l:libnuma.so.1 -lpthread `$(ROOT)/bin/root-config --libs`
+LIBS = -lstdc++fs -lpq -luWS -lcurl -lcrypto -lssl -lz -l:libnuma.so.1 -lpthread
 JEMALLOC = -L`jemalloc-config --libdir` -Wl,-rpath,`jemalloc-config --libdir` -l:libjemalloc.so.2 `jemalloc-config --libs`
 TARGET = gaiawebql
 

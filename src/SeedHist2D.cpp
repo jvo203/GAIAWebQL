@@ -10,9 +10,6 @@ void SeedH2::update(float _x, float _y) {
   else {
     // a custom histogram
     this->fill(_x, _y);
-
-    // append to the histogram
-    this->hist->Fill(_x, _y);
   }
 
   if (data.size() == BURN_IN)
@@ -25,10 +22,10 @@ void SeedH2::fill(float _x, float _y) {
   }
 
   double x = double(_x - x_min) / double(x_max - x_min);
-  int idx = std::clamp((int)(x * NO_BINS), 0, NO_BINS - 1);
+  int idx = std::clamp((int)(x * NBINS), 0, NBINS - 1);
 
   double y = double(_y - y_min) / double(y_max - y_min);
-  int idy = std::clamp((int)(y * NO_BINS), 0, NO_BINS - 1);
+  int idy = std::clamp((int)(y * NBINS), 0, NBINS - 1);
 
   bin_data[idx][idy]++;
 }
@@ -81,8 +78,8 @@ void SeedH2::flush() {
     y_axis[i] = y_min + double(i) * dy;
   }*/
 
-  for (int i = 0; i < NO_BINS; i++)
-    for (int j = 0; j < NO_BINS; j++)
+  for (int i = 0; i < NBINS; i++)
+    for (int j = 0; j < NBINS; j++)
       bin_data[i][j] = 0;
 
   for (auto &x : data) {
@@ -95,27 +92,6 @@ void SeedH2::flush() {
   // allocate a new Boost.Histogram
   /*_hist = make_histogram(axis::regular<float>(600, x_min, x_max,
      "_x"), axis::regular<float>(600, y_min, y_max, "_y"));*/
-
-  // allocate a new ROOT histogram
-  boost::uuids::random_generator gen;
-  boost::uuids::uuid id = gen();
-  const std::string name = boost::uuids::to_string(id);
-
-  this->hist = new TH2D((const char *)name.c_str(), this->title.c_str(), 600,
-                        x_min, x_max, 600, y_min, y_max);
-  this->hist->SetCanExtend(TH1::kAllAxes);
-
-  if (this->hist == NULL) {
-    printf("[error] TH2D histogram object cannot be created\n");
-    return;
-  }
-
-  for (auto &x : data) {
-    double _x, _y;
-    std::tie(_x, _y) = x;
-
-    hist->Fill(_x, _y);
-  }
 
   data.clear();
 

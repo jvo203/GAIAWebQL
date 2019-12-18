@@ -58,22 +58,6 @@ using std::chrono::steady_clock;
 
 #include "SeedHist2D.hpp"
 
-// CERN ROOT
-#include <TCanvas.h>
-#include <TGaxis.h>
-#include <TH2.h>
-#include <TH2D.h>
-#include <TH3.h>
-#include <TImage.h>
-#include <TROOT.h>
-#include <TStyle.h>
-//#include <TThread.h>
-
-void ReverseYAxis(TH1 *h);
-void ReverseYData(TH2 *h);
-void SetView2D(TH2 *h);
-void SetView3D(TH3 *h);
-
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/atomic.hpp>
@@ -191,12 +175,12 @@ struct gaia_hist {
   SeedH2 _xy;
   SeedH2 _rz;
 
-  TH3 *XYVR;
+  /*TH3 *XYVR;
   TH3 *XYVPhi;
   TH3 *XYVZ;
   TH3 *RZVR;
   TH3 *RZVPhi;
-  TH3 *RZVZ;
+  TH3 *RZVZ;*/
 };
 
 std::mutex root_mtx;
@@ -759,7 +743,7 @@ void execute_gaia(uWS::HttpResponse *res,
     global_hist._rz.set_title("R-Z");
 
     // 3D histograms
-    sprintf(name, "%s/XYVR", uuid.c_str());
+    /*sprintf(name, "%s/XYVR", uuid.c_str());
     global_hist.XYVR = new TH3D(name, "X-Y-V_{R}", 100, -0.1, 0.1, 100, -0.1,
                                 0.1, 100, -0.1, 0.1);
     global_hist.XYVR->SetCanExtend(TH1::kAllAxes);
@@ -787,7 +771,7 @@ void execute_gaia(uWS::HttpResponse *res,
     sprintf(name, "%s/RZVZ", uuid.c_str());
     global_hist.RZVZ = new TH3D(name, "R-Z-V_{Z}", 100, -0.1, 0.1, 100, -0.1,
                                 0.1, 100, -0.1, 0.1);
-    global_hist.RZVZ->SetCanExtend(TH1::kAllAxes);
+    global_hist.RZVZ->SetCanExtend(TH1::kAllAxes);*/
 
     for (int i = 0; i < max_threads; i++) {
       thread_coords[i] = std::make_shared<OmniCoords>(OmniCoords());
@@ -824,12 +808,12 @@ void execute_gaia(uWS::HttpResponse *res,
         global_hist._rz.update(data.R, data.Z);
 
         // CERN ROOT
-        global_hist.XYVR->Fill(data.X, data.Y, data.VR);
+        /*global_hist.XYVR->Fill(data.X, data.Y, data.VR);
         global_hist.XYVPhi->Fill(data.X, data.Y, data.VPhi);
         global_hist.XYVZ->Fill(data.X, data.Y, data.VZ);
         global_hist.RZVR->Fill(data.R, data.Z, data.VR);
         global_hist.RZVPhi->Fill(data.R, data.Z, data.VPhi);
-        global_hist.RZVZ->Fill(data.R, data.Z, data.VZ);
+        global_hist.RZVZ->Fill(data.R, data.Z, data.VZ);*/
       };
 
       // older Boost on py1 does not have consume_all!!!
@@ -895,720 +879,85 @@ void execute_gaia(uWS::HttpResponse *res,
     std::cout << "a global queue length: " << queue.queue.size() << std::endl;
 
     if (!search_aborted) {
+      // save the histograms to disk
+
       // the H-R diagram
       {
-        ReverseYData(global_hist._hr.hist);
-        global_hist._hr.hist->SetStats(false);
-        global_hist._hr.hist->GetXaxis()->SetTitle("(BP-RP) [mag]");
-        global_hist._hr.hist->GetYaxis()->SetTitle("M_{G} [mag]");
-        // global_hist->GetZaxis()->SetTitle("star density");
-
-        std::lock_guard<std::mutex> lock(root_mtx);
-        // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-        TCanvas *c = new TCanvas("", "", 600, 600);
-        c->SetBatch(true);
-        c->SetGrid(true);
-        global_hist._hr.hist->Draw("COLZ"); // COLZ or CONTZ
-        c->SetRightMargin(0.13);
-        ReverseYAxis(global_hist._hr.hist);
-
-        TImage *img = TImage::Create();
-        img->FromPad(c);
-
-        char *image_buffer;
-        int image_size;
-
-        img->GetImageBuffer(&image_buffer, &image_size);
-        std::cout << "HR diagram PNG graphic size: " << image_size << std::endl;
-
-        // base64 conversion
-        char *output = base64((const unsigned char *)image_buffer, image_size);
-
-        if (output != NULL) {
-          char *encoded = json_encode_string(output);
-
-          if (encoded != NULL) {
-            std::lock_guard<std::mutex> res_lock(results_mtx);
-
-            // send json via websockets
-            try {
-              // send completed search jobs via websockets
-              std::ostringstream json;
-
-              json << "{";
-              json << "\"type\" : \"plot\",";
-              /*json << "\"thread\" : " << (max_threads + 1) << ",";
-          json << "\"total\" : " << (max_threads + 1) << ",";*/
-              json << "\"thread\" : " << (1) << ",";
-              // json << "\"total\" : " << (1) << ",";
-              json << "\"density_plot\" : " << encoded;
-              json << "}";
-
-              std::lock_guard<std::mutex> lock(progress_mtx);
-              auto ws = progress_list.at(uuid);
-
-              ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-              // remove the results
-              results.erase(uuid);
-            } catch (const std::out_of_range &err) {
-              printf("no websocket connection found for a job request %s\n",
-                     uuid.c_str());
-
-              try {
-                auto result = results.at(uuid);
-                result->hr = std::string(encoded);
-              } catch (const std::out_of_range &err) {
-                printf("no entry found in results for a job request %s\n",
-                       uuid.c_str());
-              }
-            }
-
-            free(encoded);
-          }
-
-          free(output);
-        }
-
-        free(image_buffer);
-
-        delete img;
-        delete c;
+          /*ReverseYData(global_hist._hr.hist);
+          global_hist._hr.hist->SetStats(false);
+          global_hist._hr.hist->GetXaxis()->SetTitle("(BP-RP) [mag]");
+          global_hist._hr.hist->GetYaxis()->SetTitle("M_{G} [mag]");*/
+          // global_hist->GetZaxis()->SetTitle("star density");
       }
 
       // the X-Y plot
       {
-        global_hist._xy.hist->SetStats(false);
-        global_hist._xy.hist->GetXaxis()->SetTitle("X [kpc]");
-        global_hist._xy.hist->GetYaxis()->SetTitle("Y [kpc]");
-        SetView2D(global_hist._xy.hist);
-
-        std::lock_guard<std::mutex> lock(root_mtx);
-        // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-        TCanvas *c = new TCanvas("", "", 600, 600);
-        c->SetBatch(true);
-        c->SetGrid(true);
-        global_hist._xy.hist->Draw("COLZ"); // COLZ or CONTZ
-        c->SetRightMargin(0.13);
-
-        TImage *img = TImage::Create();
-        img->FromPad(c);
-
-        char *image_buffer;
-        int image_size;
-
-        img->GetImageBuffer(&image_buffer, &image_size);
-        std::cout << "X-Y plot PNG graphic size: " << image_size << std::endl;
-
-        // base64 conversion
-        char *output = base64((const unsigned char *)image_buffer, image_size);
-
-        if (output != NULL) {
-          char *encoded = json_encode_string(output);
-
-          if (encoded != NULL) {
-            std::lock_guard<std::mutex> res_lock(results_mtx);
-
-            // send json via websockets
-            try {
-              // send completed search jobs via websockets
-              std::ostringstream json;
-
-              json << "{";
-              json << "\"type\" : \"plot\",";
-              /*json << "\"thread\" : " << (max_threads + 1) << ",";
-          json << "\"total\" : " << (max_threads + 1) << ",";*/
-              json << "\"thread\" : " << (2) << ",";
-              // json << "\"total\" : " << (1) << ",";
-              json << "\"density_plot\" : " << encoded;
-              json << "}";
-
-              std::lock_guard<std::mutex> lock(progress_mtx);
-              auto ws = progress_list.at(uuid);
-
-              ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-              // remove the results
-              results.erase(uuid);
-            } catch (const std::out_of_range &err) {
-              printf("no websocket connection found for a job request %s\n",
-                     uuid.c_str());
-
-              try {
-                auto result = results.at(uuid);
-                result->xy = std::string(encoded);
-              } catch (const std::out_of_range &err) {
-                printf("no entry found in results for a job request %s\n",
-                       uuid.c_str());
-              }
-            }
-
-            free(encoded);
-          }
-
-          free(output);
-        }
-
-        free(image_buffer);
-
-        delete img;
-        delete c;
+          /*global_hist._xy.hist->SetStats(false);
+          global_hist._xy.hist->GetXaxis()->SetTitle("X [kpc]");
+          global_hist._xy.hist->GetYaxis()->SetTitle("Y [kpc]");
+          SetView2D(global_hist._xy.hist);*/
       }
 
       // the R-Z plot
       {
-        global_hist._rz.hist->SetStats(false);
-        global_hist._rz.hist->GetXaxis()->SetTitle("R [kpc]");
-        global_hist._rz.hist->GetYaxis()->SetTitle("Z [kpc]");
-        SetView2D(global_hist._rz.hist);
-
-        std::lock_guard<std::mutex> lock(root_mtx);
-        // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-        TCanvas *c = new TCanvas("", "", 600, 600);
-        c->SetBatch(true);
-        c->SetGrid(true);
-        global_hist._rz.hist->Draw("COLZ"); // COLZ or CONTZ
-        c->SetRightMargin(0.13);
-
-        TImage *img = TImage::Create();
-        img->FromPad(c);
-
-        char *image_buffer;
-        int image_size;
-
-        img->GetImageBuffer(&image_buffer, &image_size);
-        std::cout << "R-Z plot PNG graphic size: " << image_size << std::endl;
-
-        // base64 conversion
-        char *output = base64((const unsigned char *)image_buffer, image_size);
-
-        if (output != NULL) {
-          char *encoded = json_encode_string(output);
-
-          if (encoded != NULL) {
-            std::lock_guard<std::mutex> res_lock(results_mtx);
-
-            // send json via websockets
-            try {
-              // send completed search jobs via websockets
-              std::ostringstream json;
-
-              json << "{";
-              json << "\"type\" : \"plot\",";
-              /*json << "\"thread\" : " << (max_threads + 1) << ",";
-          json << "\"total\" : " << (max_threads + 1) << ",";*/
-              json << "\"thread\" : " << (3) << ",";
-              // json << "\"total\" : " << (1) << ",";
-              json << "\"density_plot\" : " << encoded;
-              json << "}";
-
-              std::lock_guard<std::mutex> lock(progress_mtx);
-              auto ws = progress_list.at(uuid);
-
-              ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-              // remove the results
-              results.erase(uuid);
-            } catch (const std::out_of_range &err) {
-              printf("no websocket connection found for a job request %s\n",
-                     uuid.c_str());
-
-              try {
-                auto result = results.at(uuid);
-                result->rz = std::string(encoded);
-              } catch (const std::out_of_range &err) {
-                printf("no entry found in results for a job request %s\n",
-                       uuid.c_str());
-              }
-            }
-
-            free(encoded);
-          }
-
-          free(output);
-        }
-
-        free(image_buffer);
-
-        delete img;
-        delete c;
+          /*global_hist._rz.hist->SetStats(false);
+          global_hist._rz.hist->GetXaxis()->SetTitle("R [kpc]");
+          global_hist._rz.hist->GetYaxis()->SetTitle("Z [kpc]");
+          SetView2D(global_hist._rz.hist);*/
       }
 
       // the X-Y-VR plot
       {
-        global_hist.XYVR->SetStats(false);
-        global_hist.XYVR->GetXaxis()->SetTitle("X [kpc]");
-        global_hist.XYVR->GetYaxis()->SetTitle("Y [kpc]");
-        global_hist.XYVR->GetZaxis()->SetTitle("V_{R} [km/s]");
-        SetView3D(global_hist.XYVR);
-
-        std::lock_guard<std::mutex> lock(root_mtx);
-        // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-        TCanvas *c = new TCanvas("", "", 600, 600);
-        c->SetBatch(true);
-        c->SetGrid(true);
-        global_hist.XYVR->Draw("ISO");
-        c->SetRightMargin(0.13);
-
-        TImage *img = TImage::Create();
-        img->FromPad(c);
-
-        char *image_buffer;
-        int image_size;
-
-        img->GetImageBuffer(&image_buffer, &image_size);
-        std::cout << "X-Y-VR plot PNG graphic size: " << image_size
-                  << std::endl;
-
-        // base64 conversion
-        char *output = base64((const unsigned char *)image_buffer, image_size);
-
-        if (output != NULL) {
-          char *encoded = json_encode_string(output);
-
-          if (encoded != NULL) {
-            std::lock_guard<std::mutex> res_lock(results_mtx);
-
-            // send json via websockets
-            try {
-              // send completed search jobs via websockets
-              std::ostringstream json;
-
-              json << "{";
-              json << "\"type\" : \"plot\",";
-              /*json << "\"thread\" : " << (max_threads + 1) << ",";
-          json << "\"total\" : " << (max_threads + 1) << ",";*/
-              json << "\"thread\" : " << (4) << ",";
-              // json << "\"total\" : " << (1) << ",";
-              json << "\"density_plot\" : " << encoded;
-              json << "}";
-
-              std::lock_guard<std::mutex> lock(progress_mtx);
-              auto ws = progress_list.at(uuid);
-
-              ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-              // remove the results
-              results.erase(uuid);
-            } catch (const std::out_of_range &err) {
-              printf("no websocket connection found for a job request %s\n",
-                     uuid.c_str());
-
-              try {
-                auto result = results.at(uuid);
-                result->xyvr = std::string(encoded);
-              } catch (const std::out_of_range &err) {
-                printf("no entry found in results for a job request %s\n",
-                       uuid.c_str());
-              }
-            }
-
-            free(encoded);
-          }
-
-          free(output);
-        }
-
-        free(image_buffer);
-
-        delete img;
-        delete c;
+          /*global_hist.XYVR->SetStats(false);
+          global_hist.XYVR->GetXaxis()->SetTitle("X [kpc]");
+          global_hist.XYVR->GetYaxis()->SetTitle("Y [kpc]");
+          global_hist.XYVR->GetZaxis()->SetTitle("V_{R} [km/s]");
+          SetView3D(global_hist.XYVR);*/
       }
 
       // the X-Y-VPhi plot
       {
-        global_hist.XYVPhi->SetStats(false);
-        global_hist.XYVPhi->GetXaxis()->SetTitle("X [kpc]");
-        global_hist.XYVPhi->GetYaxis()->SetTitle("Y [kpc]");
-        global_hist.XYVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
-        SetView3D(global_hist.XYVPhi);
-
-        std::lock_guard<std::mutex> lock(root_mtx);
-        // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-        TCanvas *c = new TCanvas("", "", 600, 600);
-        c->SetBatch(true);
-        c->SetGrid(true);
-        global_hist.XYVPhi->Draw("ISO");
-        c->SetRightMargin(0.13);
-
-        TImage *img = TImage::Create();
-        img->FromPad(c);
-
-        char *image_buffer;
-        int image_size;
-
-        img->GetImageBuffer(&image_buffer, &image_size);
-        std::cout << "X-Y-VPhi plot PNG graphic size: " << image_size
-                  << std::endl;
-
-        // base64 conversion
-        char *output = base64((const unsigned char *)image_buffer, image_size);
-
-        if (output != NULL) {
-          char *encoded = json_encode_string(output);
-
-          if (encoded != NULL) {
-            std::lock_guard<std::mutex> res_lock(results_mtx);
-
-            // send json via websockets
-            try {
-              // send completed search jobs via websockets
-              std::ostringstream json;
-
-              json << "{";
-              json << "\"type\" : \"plot\",";
-              /*json << "\"thread\" : " << (max_threads + 1) << ",";
-          json << "\"total\" : " << (max_threads + 1) << ",";*/
-              json << "\"thread\" : " << (5) << ",";
-              // json << "\"total\" : " << (1) << ",";
-              json << "\"density_plot\" : " << encoded;
-              json << "}";
-
-              std::lock_guard<std::mutex> lock(progress_mtx);
-              auto ws = progress_list.at(uuid);
-
-              ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-              // remove the results
-              results.erase(uuid);
-            } catch (const std::out_of_range &err) {
-              printf("no websocket connection found for a job request %s\n",
-                     uuid.c_str());
-
-              try {
-                auto result = results.at(uuid);
-                result->xyvphi = std::string(encoded);
-              } catch (const std::out_of_range &err) {
-                printf("no entry found in results for a job request %s\n",
-                       uuid.c_str());
-              }
-            }
-
-            free(encoded);
-          }
-
-          free(output);
-        }
-
-        free(image_buffer);
-
-        delete img;
-        delete c;
+          /*global_hist.XYVPhi->SetStats(false);
+          global_hist.XYVPhi->GetXaxis()->SetTitle("X [kpc]");
+          global_hist.XYVPhi->GetYaxis()->SetTitle("Y [kpc]");
+          global_hist.XYVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
+          SetView3D(global_hist.XYVPhi);*/
       }
 
       // the X-Y-VZ plot
       {
-        global_hist.XYVZ->SetStats(false);
-        global_hist.XYVZ->GetXaxis()->SetTitle("X [kpc]");
-        global_hist.XYVZ->GetYaxis()->SetTitle("Y [kpc]");
-        global_hist.XYVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
-        SetView3D(global_hist.XYVZ);
-
-        std::lock_guard<std::mutex> lock(root_mtx);
-        // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-        TCanvas *c = new TCanvas("", "", 600, 600);
-        c->SetBatch(true);
-        c->SetGrid(true);
-        global_hist.XYVZ->Draw("ISO");
-        c->SetRightMargin(0.13);
-
-        TImage *img = TImage::Create();
-        img->FromPad(c);
-
-        char *image_buffer;
-        int image_size;
-
-        img->GetImageBuffer(&image_buffer, &image_size);
-        std::cout << "X-Y-VZ plot PNG graphic size: " << image_size
-                  << std::endl;
-
-        // base64 conversion
-        char *output = base64((const unsigned char *)image_buffer, image_size);
-
-        if (output != NULL) {
-          char *encoded = json_encode_string(output);
-
-          if (encoded != NULL) {
-            std::lock_guard<std::mutex> res_lock(results_mtx);
-
-            // send json via websockets
-            try {
-              // send completed search jobs via websockets
-              std::ostringstream json;
-
-              json << "{";
-              json << "\"type\" : \"plot\",";
-              /*json << "\"thread\" : " << (max_threads + 1) << ",";
-          json << "\"total\" : " << (max_threads + 1) << ",";*/
-              json << "\"thread\" : " << (6) << ",";
-              // json << "\"total\" : " << (1) << ",";
-              json << "\"density_plot\" : " << encoded;
-              json << "}";
-
-              std::lock_guard<std::mutex> lock(progress_mtx);
-              auto ws = progress_list.at(uuid);
-
-              ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-              // remove the results
-              results.erase(uuid);
-            } catch (const std::out_of_range &err) {
-              printf("no websocket connection found for a job request %s\n",
-                     uuid.c_str());
-
-              try {
-                auto result = results.at(uuid);
-                result->xyvz = std::string(encoded);
-              } catch (const std::out_of_range &err) {
-                printf("no entry found in results for a job request %s\n",
-                       uuid.c_str());
-              }
-            }
-
-            free(encoded);
-          }
-
-          free(output);
-        }
-
-        free(image_buffer);
-
-        delete img;
-        delete c;
+          /*global_hist.XYVZ->SetStats(false);
+          global_hist.XYVZ->GetXaxis()->SetTitle("X [kpc]");
+          global_hist.XYVZ->GetYaxis()->SetTitle("Y [kpc]");
+          global_hist.XYVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
+          SetView3D(global_hist.XYVZ);*/
       }
 
       // the R-Z-VR plot
       {
-        global_hist.RZVR->SetStats(false);
-        global_hist.RZVR->GetXaxis()->SetTitle("R [kpc]");
-        global_hist.RZVR->GetYaxis()->SetTitle("Z [kpc]");
-        global_hist.RZVR->GetZaxis()->SetTitle("V_{R} [km/s]");
-        SetView3D(global_hist.RZVR);
-
-        std::lock_guard<std::mutex> lock(root_mtx);
-        // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-        TCanvas *c = new TCanvas("", "", 600, 600);
-        c->SetBatch(true);
-        c->SetGrid(true);
-        global_hist.RZVR->Draw("ISO");
-        c->SetRightMargin(0.13);
-
-        TImage *img = TImage::Create();
-        img->FromPad(c);
-
-        char *image_buffer;
-        int image_size;
-
-        img->GetImageBuffer(&image_buffer, &image_size);
-        std::cout << "R-Z-VR plot PNG graphic size: " << image_size
-                  << std::endl;
-
-        // base64 conversion
-        char *output = base64((const unsigned char *)image_buffer, image_size);
-
-        if (output != NULL) {
-          char *encoded = json_encode_string(output);
-
-          if (encoded != NULL) {
-            std::lock_guard<std::mutex> res_lock(results_mtx);
-
-            // send json via websockets
-            try {
-              // send completed search jobs via websockets
-              std::ostringstream json;
-
-              json << "{";
-              json << "\"type\" : \"plot\",";
-              /*json << "\"thread\" : " << (max_threads + 1) << ",";
-          json << "\"total\" : " << (max_threads + 1) << ",";*/
-              json << "\"thread\" : " << (7) << ",";
-              // json << "\"total\" : " << (1) << ",";
-              json << "\"density_plot\" : " << encoded;
-              json << "}";
-
-              std::lock_guard<std::mutex> lock(progress_mtx);
-              auto ws = progress_list.at(uuid);
-
-              ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-              // remove the results
-              results.erase(uuid);
-            } catch (const std::out_of_range &err) {
-              printf("no websocket connection found for a job request %s\n",
-                     uuid.c_str());
-
-              try {
-                auto result = results.at(uuid);
-                result->rzvr = std::string(encoded);
-              } catch (const std::out_of_range &err) {
-                printf("no entry found in results for a job request %s\n",
-                       uuid.c_str());
-              }
-            }
-
-            free(encoded);
-          }
-
-          free(output);
-        }
-
-        free(image_buffer);
-
-        delete img;
-        delete c;
+          /*global_hist.RZVR->SetStats(false);
+          global_hist.RZVR->GetXaxis()->SetTitle("R [kpc]");
+          global_hist.RZVR->GetYaxis()->SetTitle("Z [kpc]");
+          global_hist.RZVR->GetZaxis()->SetTitle("V_{R} [km/s]");
+          SetView3D(global_hist.RZVR);*/
       }
 
       // the R-Z-VPhi plot
       {
-        global_hist.RZVPhi->SetStats(false);
-        global_hist.RZVPhi->GetXaxis()->SetTitle("R [kpc]");
-        global_hist.RZVPhi->GetYaxis()->SetTitle("Z [kpc]");
-        global_hist.RZVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
-        SetView3D(global_hist.RZVPhi);
-
-        std::lock_guard<std::mutex> lock(root_mtx);
-        // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-        TCanvas *c = new TCanvas("", "", 600, 600);
-        c->SetBatch(true);
-        c->SetGrid(true);
-        global_hist.RZVPhi->Draw("ISO");
-        c->SetRightMargin(0.13);
-
-        TImage *img = TImage::Create();
-        img->FromPad(c);
-
-        char *image_buffer;
-        int image_size;
-
-        img->GetImageBuffer(&image_buffer, &image_size);
-        std::cout << "R-Z-VPhi plot PNG graphic size: " << image_size
-                  << std::endl;
-
-        // base64 conversion
-        char *output = base64((const unsigned char *)image_buffer, image_size);
-
-        if (output != NULL) {
-          char *encoded = json_encode_string(output);
-
-          if (encoded != NULL) {
-            std::lock_guard<std::mutex> res_lock(results_mtx);
-
-            // send json via websockets
-            try {
-              // send completed search jobs via websockets
-              std::ostringstream json;
-
-              json << "{";
-              json << "\"type\" : \"plot\",";
-              /*json << "\"thread\" : " << (max_threads + 1) << ",";
-          json << "\"total\" : " << (max_threads + 1) << ",";*/
-              json << "\"thread\" : " << (8) << ",";
-              // json << "\"total\" : " << (1) << ",";
-              json << "\"density_plot\" : " << encoded;
-              json << "}";
-
-              std::lock_guard<std::mutex> lock(progress_mtx);
-              auto ws = progress_list.at(uuid);
-
-              ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-              // remove the results
-              results.erase(uuid);
-            } catch (const std::out_of_range &err) {
-              printf("no websocket connection found for a job request %s\n",
-                     uuid.c_str());
-
-              try {
-                auto result = results.at(uuid);
-                result->rzvphi = std::string(encoded);
-              } catch (const std::out_of_range &err) {
-                printf("no entry found in results for a job request %s\n",
-                       uuid.c_str());
-              }
-            }
-
-            free(encoded);
-          }
-
-          free(output);
-        }
-
-        free(image_buffer);
-
-        delete img;
-        delete c;
+          /*global_hist.RZVPhi->SetStats(false);
+          global_hist.RZVPhi->GetXaxis()->SetTitle("R [kpc]");
+          global_hist.RZVPhi->GetYaxis()->SetTitle("Z [kpc]");
+          global_hist.RZVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
+          SetView3D(global_hist.RZVPhi);*/
       }
 
       // the R-Z-VZ plot
       {
-        global_hist.RZVZ->SetStats(false);
+        /*global_hist.RZVZ->SetStats(false);
         global_hist.RZVZ->GetXaxis()->SetTitle("R [kpc]");
         global_hist.RZVZ->GetYaxis()->SetTitle("Z [kpc]");
         global_hist.RZVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
-        SetView3D(global_hist.RZVZ);
-
-        std::lock_guard<std::mutex> lock(root_mtx);
-        // gStyle->SetImageScaling(3.);//the HTML canvas image is too big
-        TCanvas *c = new TCanvas("", "", 600, 600);
-        c->SetBatch(true);
-        c->SetGrid(true);
-        global_hist.RZVZ->Draw("ISO");
-        c->SetRightMargin(0.13);
-
-        TImage *img = TImage::Create();
-        img->FromPad(c);
-
-        char *image_buffer;
-        int image_size;
-
-        img->GetImageBuffer(&image_buffer, &image_size);
-        std::cout << "R-Z-VZ plot PNG graphic size: " << image_size
-                  << std::endl;
-
-        // base64 conversion
-        char *output = base64((const unsigned char *)image_buffer, image_size);
-
-        if (output != NULL) {
-          char *encoded = json_encode_string(output);
-
-          if (encoded != NULL) {
-            std::lock_guard<std::mutex> res_lock(results_mtx);
-
-            // send json via websockets
-            try {
-              // send completed search jobs via websockets
-              std::ostringstream json;
-
-              json << "{";
-              json << "\"type\" : \"plot\",";
-              /*json << "\"thread\" : " << (max_threads + 1) << ",";
-          json << "\"total\" : " << (max_threads + 1) << ",";*/
-              json << "\"thread\" : " << (9) << ",";
-              // json << "\"total\" : " << (1) << ",";
-              json << "\"density_plot\" : " << encoded;
-              json << "}";
-
-              std::lock_guard<std::mutex> lock(progress_mtx);
-              auto ws = progress_list.at(uuid);
-
-              ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-              // remove the results
-              results.erase(uuid);
-            } catch (const std::out_of_range &err) {
-              printf("no websocket connection found for a job request %s\n",
-                     uuid.c_str());
-
-              try {
-                auto result = results.at(uuid);
-                result->rzvz = std::string(encoded);
-              } catch (const std::out_of_range &err) {
-                printf("no entry found in results for a job request %s\n",
-                       uuid.c_str());
-              }
-            }
-
-            free(encoded);
-          }
-
-          free(output);
-        }
-
-        free(image_buffer);
-
-        delete img;
-        delete c;
+        SetView3D(global_hist.RZVZ);*/
       }
     } else {
       // purge the results
@@ -1616,12 +965,12 @@ void execute_gaia(uWS::HttpResponse *res,
       results.erase(uuid);
     }
 
-    delete global_hist.XYVR;
+    /*delete global_hist.XYVR;
     delete global_hist.XYVPhi;
     delete global_hist.XYVZ;
     delete global_hist.RZVR;
     delete global_hist.RZVPhi;
-    delete global_hist.RZVZ;
+    delete global_hist.RZVZ;*/
 
     std::lock_guard<std::mutex> lock(requests_mtx);
     requests.erase(uuid);
@@ -1742,41 +1091,7 @@ char *base64(const unsigned char *input, int length) {
   return buff;
 }
 
-void ReverseYAxis(TH1 *h) {
-  // Remove the current axis
-  h->GetYaxis()->SetLabelOffset(999);
-  h->GetYaxis()->SetTickLength(0);
-  // Redraw the new axis
-  gPad->Update();
-  TGaxis *newaxis =
-      new TGaxis(gPad->GetUxmin(), gPad->GetUymax(), gPad->GetUxmin() - 0.001,
-                 gPad->GetUymin(), h->GetYaxis()->GetXmin(),
-                 h->GetYaxis()->GetXmax(), 510, "+");
-  newaxis->SetLabelOffset(-0.03);
-  newaxis->Draw();
-}
-
-void ReverseYData(TH2 *h) {
-  Int_t nx = h->GetNbinsX();
-  Int_t ny = h->GetNbinsY();
-
-  for (Int_t i = 0; i < nx; i++) {
-    for (Int_t j = 0; j < ny / 2; j++) {
-      Int_t a = h->GetBin(i, j);
-      Int_t b = h->GetBin(i, ny - 1 - j);
-
-      auto tmp = h->GetBinContent(a);
-      auto tmp2 = h->GetBinContent(b);
-
-      h->SetBinContent(a, tmp2);
-      h->SetBinContent(b, tmp);
-    }
-  }
-
-  h->ComputeIntegral();
-}
-
-void SetView2D(TH2 *h) {
+/*void SetView2D(TH2 *h) {
   auto mean_x = h->GetMean(1);
   auto std_x = h->GetStdDev(1);
   auto mean_y = h->GetMean(2);
@@ -1797,11 +1112,10 @@ void SetView3D(TH3 *h) {
   h->GetXaxis()->SetRangeUser(mean_x - 10.0 * std_x, mean_x + 10.0 * std_x);
   h->GetYaxis()->SetRangeUser(mean_y - 10.0 * std_y, mean_y + 10.0 * std_y);
   h->GetZaxis()->SetRangeUser(mean_z - 10.0 * std_z, mean_z + 10.0 * std_z);
-}
+}*/
 
 int main(int argc, char *argv[]) {
   curl_global_init(CURL_GLOBAL_ALL);
-  ROOT::EnableThreadSafety();
 
   // load the db healpix index file
   load_db_index("gaiadr2-table.dat");
