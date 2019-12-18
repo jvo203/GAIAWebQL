@@ -8,7 +8,7 @@
 using namespace boost::histogram;*/
 
 #define BURN_IN 1000000
-#define NBINS 100
+#define NBINS 600
 // cannot deal with 600*600, need to allocate the bin data dynamically
 
 class SeedH2 {
@@ -21,14 +21,26 @@ public:
     x_max = FLT_MAX;
     y_min = -FLT_MAX;
     y_max = FLT_MAX;
+
+    // allocate the bin memory
+    bin_data = (uint64_t **)malloc(sizeof(uint64_t *) * NBINS);
+    if (bin_data != NULL)
+      for (int i = 0; i < NBINS; i++)
+        bin_data[i] = (uint64_t *)malloc(sizeof(uint64_t) * NBINS);
+
     printf("created a SeedH2::%s\n", title.c_str());
   }
   ~SeedH2() {
     // print a custom histogram
     for (int i = 0; i < NBINS; i++)
       for (int j = 0; j < NBINS; j++)
-        printf("%zu", bin_data[i][j]);
+        printf("%zu ", bin_data[i][j]);
     printf("\n");
+
+    if (bin_data != NULL)
+      for (int i = 0; i < NBINS; i++)
+        if (bin_data[i] != NULL)
+          free(bin_data[i]);
   };
 
 public:
@@ -49,5 +61,6 @@ private:
   // a custom histogram
   /*float x_axis[NO_BINS + 1];
   float y_axis[NO_BINS + 1];*/
-  uint64_t bin_data[NBINS][NBINS];
+  // uint64_t bin_data[NBINS][NBINS];
+  uint64_t **bin_data;
 };
