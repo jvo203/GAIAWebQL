@@ -2,6 +2,8 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
+#include <iostream>
+
 #include "SeedHist2D.hpp"
 
 SeedH2::SeedH2() {
@@ -215,3 +217,9 @@ void SeedH2::flush() {
 
   init_done = true;
 }
+
+void SeedH2::save(std::string uuid, std::string type) {
+  std::string filename = "DATA/" + uuid + "-" + type + ".dat";
+
+  std::cout << "saving " << title << " into " << filename << std::endl;
+};
