@@ -3,6 +3,7 @@
 #include <boost/uuid/uuid_io.hpp>
 
 #include <iostream>
+#include <sys/stat.h>
 
 #include "SeedHist2D.hpp"
 
@@ -219,7 +220,15 @@ void SeedH2::flush() {
 }
 
 void SeedH2::save(std::string uuid, std::string type) {
-  std::string filename = "DATA/" + uuid + "-" + type + ".dat";
+  std::string filename = "DATA/" + uuid + "/" + type + ".json";
 
   std::cout << "saving " << title << " into " << filename << std::endl;
+
+  // mkdir DATA/<uuid>.tmp
+  std::string dir = "DATA/" + uuid + ".tmp";
+
+  if (mkdir(dir.c_str(), 0777) != 0) {
+    perror(title.c_str());
+    return;
+  }
 };
