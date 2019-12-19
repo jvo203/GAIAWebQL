@@ -880,9 +880,9 @@ void execute_gaia(uWS::HttpResponse *res,
 
     if (!search_aborted) {
       // save the histograms to disk
-      global_hist._hr.save(uuid.c_str(), "hr");
-      global_hist._xy.save(uuid.c_str(), "xy");
-      global_hist._rz.save(uuid.c_str(), "rz");
+      global_hist._hr.save(uuid, "hr");
+      global_hist._xy.save(uuid, "xy");
+      global_hist._rz.save(uuid, "rz");
 
       // the H-R diagram
       {
