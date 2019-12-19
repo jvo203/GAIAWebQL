@@ -89,7 +89,7 @@ void SeedH2::rebin_y(double y_min_new, double y_max_new) {
   uint64_t bins[NBINS];
 
   printf("rebin_y::%s y_min: %f ==> %f, y_max: %f ==> %f\n", title.c_str(),
-         x_min, y_min_new, x_max, y_max_new);
+         y_min, y_min_new, y_max, y_max_new);
 
   double height = (y_min - y_max) / double(NBINS);
 
