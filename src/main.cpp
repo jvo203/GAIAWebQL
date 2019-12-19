@@ -884,6 +884,11 @@ void execute_gaia(uWS::HttpResponse *res,
       global_hist._xy.save(uuid, "xy");
       global_hist._rz.save(uuid, "rz");
 
+      // rename the temporary dir to just "DATA/uuid"
+      std::string tmp = "DATA/" + uuid + ".tmp";
+      std::string dir = "DATA/" + uuid;
+      rename(tmp.c_str(), dir.c_str());
+
       // the H-R diagram
       {
           /*ReverseYData(global_hist._hr.hist);
