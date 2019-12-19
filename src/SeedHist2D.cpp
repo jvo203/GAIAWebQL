@@ -2,7 +2,9 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
+#include <fstream>
 #include <iostream>
+#include <stdio.h>
 #include <sys/stat.h>
 
 #include "SeedHist2D.hpp"
@@ -225,10 +227,45 @@ void SeedH2::save(std::string uuid, std::string type) {
   std::cout << "saving " << title << " into " << filename << std::endl;
 
   // mkdir DATA/<uuid>.tmp
-  std::string dir = "DATA/" + uuid + ".tmp";
+  std::string tmp = "DATA/" + uuid + ".tmp";
 
-  if (mkdir(dir.c_str(), 0777) != 0) {
-    perror(title.c_str());
-    return;
+  if (mkdir(tmp.c_str(), 0777) != 0) {
+    // return only in case of errors other than "directory already exists"
+    if (errno != EEXIST) {
+      perror(title.c_str());
+      return;
+    }
+  }
+
+  // write the bin data
+  {
+    filename = tmp + "/" + type + ".json";
+    std::ofstream json(filename);
+
+    json << "{\n";
+    json << "\t\"NBINS\" : " << NBINS << ",\n";
+    json << "\t\"xmin\" : " << x_min << ",\n";
+    json << "\t\"xmax\" : " << x_max << ",\n";
+    json << "\t\"ymin\" : " << y_min << ",\n";
+    json << "\t\"ymax\" : " << y_max << ",\n";
+
+    json << "\t\"bins\" : [";
+
+    for (int j = 0; j < NBINS; j++) {
+      json << "[";
+      for (int i = 0; i < NBINS; i++) {
+        json << bin_data[j][i];
+
+        if (i != NBINS - 1)
+          json << ",";
+      }
+      json << "]";
+
+      if (j != NBINS - 1)
+        json << ",";
+    }
+
+    json << "]}\n";
+    json.close();
   }
 };
