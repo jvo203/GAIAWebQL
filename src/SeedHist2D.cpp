@@ -85,7 +85,37 @@ void SeedH2::rebin_x(double x_min_new, double x_max_new) {
   x_max = x_max_new;
 }
 
-void SeedH2::rebin_y(double y_min_new, double y_max_new){};
+void SeedH2::rebin_y(double y_min_new, double y_max_new) {
+  uint64_t bins[NBINS];
+
+  printf("rebin_y::%s y_min: %f ==> %f, y_max: %f ==> %f\n", title.c_str(),
+         x_min, y_min_new, x_max, y_max_new);
+
+  double height = (y_min - y_max) / double(NBINS);
+
+  for (int j = 0; j < NBINS; j++) {
+    memset(bins, 0, NBINS * sizeof(uint64_t));
+
+    for (int i = 0; i < NBINS; i++) {
+      // get the bin centre
+      uint64_t count = bin_data[i][j];
+      double centre = y_min + i * height + 0.5 * height;
+
+      // update a new bin
+      double y = double(centre - y_min_new) / double(y_max_new - y_min_new);
+      int idy = std::clamp((int)(y * NBINS), 0, NBINS - 1);
+      bins[idy] += count;
+    }
+
+    // copy new bins to bin_data
+    for (int i = 0; i < NBINS; i++)
+      bin_data[i][j] = bins[i];
+  }
+
+  // update the range
+  y_min = y_min_new;
+  y_max = y_max_new;
+};
 
 void SeedH2::flush() {
   if (data.size() == 0)
