@@ -1,8 +1,8 @@
 function get_js_version() {
-    return "JS2019-06-26.0";
+    return "JS2019-12-23.0";
 }
 
-function open_websocket_connection() {
+/*function open_websocket_connection() {
     if ("WebSocket" in window) {
         // Let us open a web socket
         var loc = window.location, ws_uri;
@@ -86,52 +86,21 @@ function open_websocket_connection() {
                         }
 
                         if (plots_received == plots_total/*data.total*/) {
-                            $('#processing').remove();
-                            $('#completed').remove();
-                            $(".progress").remove();
-                            gaia_ws.close();
-                        }
+    $('#processing').remove();
+    $('#completed').remove();
+    $(".progress").remove();
+    gaia_ws.close();
+}
                     }
                 } catch (e) {
-                    console.error(e);
-                }
+    console.error(e);
+}
             }
 
-            if (evt.data instanceof ArrayBuffer) {
-                var dv = new DataView(received_msg);
-            }
+if (evt.data instanceof ArrayBuffer) {
+    var dv = new DataView(received_msg);
+}
         });
     }
-}
+}* /
 
-function main() {
-    session_data = document.getElementById('session-data');
-    uuid = session_data.getAttribute('data-uuid');
-    where = session_data.getAttribute('data-where');
-    va_count = parseInt(session_data.getAttribute('data-search-count'));
-    gaia_ws = null;
-    plots_received = 0;
-    plots_total = 9;
-
-    var ra = session_data.getAttribute('data-ra');
-    var dec = session_data.getAttribute('data-dec');
-    var radius = session_data.getAttribute('data-radius');
-
-    if (ra != null && dec != null && radius != null) {
-        ra = ParseRA('+' + ra);
-        dec = ParseDec(dec);
-        radius = parseFloat(radius);
-        var xradec = new Array((ra / 3600.0) / toDegrees, (dec / 3600.0) / toDegrees);
-
-        var raText = 'α: ' + RadiansPrintHMS(xradec[0]);
-        var decText = 'δ: ' + RadiansPrintDMS(xradec[1]);
-
-        $('#coords').html(raText + " " + decText + " search cone: " + radius + " deg");
-    }
-
-    console.log("welcome to gaiawebql, request id:", uuid, ", #hpx pixels:", va_count);
-
-    open_websocket_connection();
-}
-
-main();
