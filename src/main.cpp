@@ -44,6 +44,7 @@ char *base64(const unsigned char *input, int length);
 
 #include <chrono>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -716,280 +717,295 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
 void execute_gaia(uWS::HttpResponse *res,
                   std::shared_ptr<struct search_criteria> search,
                   std::string where, std::string uuid) {
-  {
-    std::lock_guard<std::mutex> req_lock(requests_mtx);
-    requests.insert(
-        std::make_pair(uuid, std::make_shared<struct db_search_job>()));
-  }
 
-  {
-    std::lock_guard<std::mutex> res_lock(results_mtx);
-    results.insert(std::make_pair(uuid, std::make_shared<struct gaia_plots>()));
-  }
+  // find out if the uuid has already been processed
+  std::string dir = "DATA/" + uuid;
 
-  std::thread([=]() {
-    printf("starting a GAIA database search thread, job id:%s\n", uuid.c_str());
-
-    int max_threads = omp_get_max_threads();
-    // std::vector<std::shared_ptr<struct gaia_hist>> thread_hist;
-    // //(max_threads);
-    std::vector<std::shared_ptr<OmniCoords>> thread_coords(max_threads);
-
-    struct gaia_hist global_hist {};
-    char name[255];
-
-    global_hist._hr.set_title("Hertzsprung-Russell diagram");
-    global_hist._xy.set_title("X-Y");
-    global_hist._rz.set_title("R-Z");
-
-    // 3D histograms
-    /*sprintf(name, "%s/XYVR", uuid.c_str());
-    global_hist.XYVR = new TH3D(name, "X-Y-V_{R}", 100, -0.1, 0.1, 100, -0.1,
-                                0.1, 100, -0.1, 0.1);
-    global_hist.XYVR->SetCanExtend(TH1::kAllAxes);
-
-    sprintf(name, "%s/XYVPhi", uuid.c_str());
-    global_hist.XYVPhi = new TH3D(name, "X-Y-V_{\\Phi}", 100, -0.1, 0.1, 100,
-                                  -0.1, 0.1, 100, -0.1, 0.1);
-    global_hist.XYVPhi->SetCanExtend(TH1::kAllAxes);
-
-    sprintf(name, "%s/XYVZ", uuid.c_str());
-    global_hist.XYVZ = new TH3D(name, "X-Y-V_{Z}", 100, -0.1, 0.1, 100, -0.1,
-                                0.1, 100, -0.1, 0.1);
-    global_hist.XYVZ->SetCanExtend(TH1::kAllAxes);
-
-    sprintf(name, "%s/RZVR", uuid.c_str());
-    global_hist.RZVR = new TH3D(name, "R-Z-V_{R}", 100, -0.1, 0.1, 100, -0.1,
-                                0.1, 100, -0.1, 0.1);
-    global_hist.RZVR->SetCanExtend(TH1::kAllAxes);
-
-    sprintf(name, "%s/RZVPhi", uuid.c_str());
-    global_hist.RZVPhi = new TH3D(name, "R-Z-V_{\\Phi}", 100, -0.1, 0.1, 100,
-                                  -0.1, 0.1, 100, -0.1, 0.1);
-    global_hist.RZVPhi->SetCanExtend(TH1::kAllAxes);
-
-    sprintf(name, "%s/RZVZ", uuid.c_str());
-    global_hist.RZVZ = new TH3D(name, "R-Z-V_{Z}", 100, -0.1, 0.1, 100, -0.1,
-                                0.1, 100, -0.1, 0.1);
-    global_hist.RZVZ->SetCanExtend(TH1::kAllAxes);*/
-
-    for (int i = 0; i < max_threads; i++) {
-      thread_coords[i] = std::make_shared<OmniCoords>(OmniCoords());
-      thread_coords[i]->change_sol_pos(8.3, 0.027);
-
-      char name[255];
-      sprintf(name, "%s/%d", uuid.c_str(), (i + 1));
-
-      // struct gaia_hist hist;
-      // hist.hr_hist = new TH2D(name, "M_{G} vs. BP-RP", 600, -1.0, 5.0, 600,
-      // -5.0, 15.0);
-      /*hist->SetCanExtend(TH1::kAllAxes);
-      hist->SetBit(TH1::kAutoBinPTwo);*/
-      // thread_hist[i] = hist;
-      // thread_hist.push_back(std::make_shared<struct
-      // gaia_hist>(std::move(hist)));
+  if (!std::filesystem::exists(dir)) {
+    {
+      std::lock_guard<std::mutex> req_lock(requests_mtx);
+      requests.insert(
+          std::make_pair(uuid, std::make_shared<struct db_search_job>()));
     }
 
-    struct global_search queue {};
+    {
+      std::lock_guard<std::mutex> res_lock(results_mtx);
+      results.insert(
+          std::make_pair(uuid, std::make_shared<struct gaia_plots>()));
+    }
 
-    boost::lockfree::stack<struct plot_data> plot_stack(100000);
-    boost::atomic<bool> search_done(false);
+    std::thread([=]() {
+      printf("starting a GAIA database search thread, job id:%s\n",
+             uuid.c_str());
 
-    std::thread plot_thread([&]() {
-      std::cout << "starting a histogram thread function.\n";
+      int max_threads = omp_get_max_threads();
+      // std::vector<std::shared_ptr<struct gaia_hist>> thread_hist;
+      // //(max_threads);
+      std::vector<std::shared_ptr<OmniCoords>> thread_coords(max_threads);
 
-      unsigned long counter = 0;
-      struct plot_data data {};
+      struct gaia_hist global_hist {};
+      char name[255];
 
-      auto plotter = [&](struct plot_data data) {
-        // a custom solution
-        global_hist._hr.update(data.bp_rp, data.M_G);
-        global_hist._xy.update(data.X, data.Y);
-        global_hist._rz.update(data.R, data.Z);
+      global_hist._hr.set_title("Hertzsprung-Russell diagram");
+      global_hist._xy.set_title("X-Y");
+      global_hist._rz.set_title("R-Z");
 
-        // CERN ROOT
-        /*global_hist.XYVR->Fill(data.X, data.Y, data.VR);
-        global_hist.XYVPhi->Fill(data.X, data.Y, data.VPhi);
-        global_hist.XYVZ->Fill(data.X, data.Y, data.VZ);
-        global_hist.RZVR->Fill(data.R, data.Z, data.VR);
-        global_hist.RZVPhi->Fill(data.R, data.Z, data.VPhi);
-        global_hist.RZVZ->Fill(data.R, data.Z, data.VZ);*/
-      };
+      // 3D histograms
+      /*sprintf(name, "%s/XYVR", uuid.c_str());
+      global_hist.XYVR = new TH3D(name, "X-Y-V_{R}", 100, -0.1, 0.1, 100, -0.1,
+                                  0.1, 100, -0.1, 0.1);
+      global_hist.XYVR->SetCanExtend(TH1::kAllAxes);
 
-      // older Boost on py1 does not have consume_all!!!
+      sprintf(name, "%s/XYVPhi", uuid.c_str());
+      global_hist.XYVPhi = new TH3D(name, "X-Y-V_{\\Phi}", 100, -0.1, 0.1, 100,
+                                    -0.1, 0.1, 100, -0.1, 0.1);
+      global_hist.XYVPhi->SetCanExtend(TH1::kAllAxes);
 
-      while (!search_done) {
+      sprintf(name, "%s/XYVZ", uuid.c_str());
+      global_hist.XYVZ = new TH3D(name, "X-Y-V_{Z}", 100, -0.1, 0.1, 100, -0.1,
+                                  0.1, 100, -0.1, 0.1);
+      global_hist.XYVZ->SetCanExtend(TH1::kAllAxes);
+
+      sprintf(name, "%s/RZVR", uuid.c_str());
+      global_hist.RZVR = new TH3D(name, "R-Z-V_{R}", 100, -0.1, 0.1, 100, -0.1,
+                                  0.1, 100, -0.1, 0.1);
+      global_hist.RZVR->SetCanExtend(TH1::kAllAxes);
+
+      sprintf(name, "%s/RZVPhi", uuid.c_str());
+      global_hist.RZVPhi = new TH3D(name, "R-Z-V_{\\Phi}", 100, -0.1, 0.1, 100,
+                                    -0.1, 0.1, 100, -0.1, 0.1);
+      global_hist.RZVPhi->SetCanExtend(TH1::kAllAxes);
+
+      sprintf(name, "%s/RZVZ", uuid.c_str());
+      global_hist.RZVZ = new TH3D(name, "R-Z-V_{Z}", 100, -0.1, 0.1, 100, -0.1,
+                                  0.1, 100, -0.1, 0.1);
+      global_hist.RZVZ->SetCanExtend(TH1::kAllAxes);*/
+
+      for (int i = 0; i < max_threads; i++) {
+        thread_coords[i] = std::make_shared<OmniCoords>(OmniCoords());
+        thread_coords[i]->change_sol_pos(8.3, 0.027);
+
+        char name[255];
+        sprintf(name, "%s/%d", uuid.c_str(), (i + 1));
+
+        // struct gaia_hist hist;
+        // hist.hr_hist = new TH2D(name, "M_{G} vs. BP-RP", 600, -1.0, 5.0, 600,
+        // -5.0, 15.0);
+        /*hist->SetCanExtend(TH1::kAllAxes);
+        hist->SetBit(TH1::kAutoBinPTwo);*/
+        // thread_hist[i] = hist;
+        // thread_hist.push_back(std::make_shared<struct
+        // gaia_hist>(std::move(hist)));
+      }
+
+      struct global_search queue {};
+
+      boost::lockfree::stack<struct plot_data> plot_stack(100000);
+      boost::atomic<bool> search_done(false);
+
+      std::thread plot_thread([&]() {
+        std::cout << "starting a histogram thread function.\n";
+
+        unsigned long counter = 0;
+        struct plot_data data {};
+
+        auto plotter = [&](struct plot_data data) {
+          // a custom solution
+          global_hist._hr.update(data.bp_rp, data.M_G);
+          global_hist._xy.update(data.X, data.Y);
+          global_hist._rz.update(data.R, data.Z);
+
+          // CERN ROOT
+          /*global_hist.XYVR->Fill(data.X, data.Y, data.VR);
+          global_hist.XYVPhi->Fill(data.X, data.Y, data.VPhi);
+          global_hist.XYVZ->Fill(data.X, data.Y, data.VZ);
+          global_hist.RZVR->Fill(data.R, data.Z, data.VR);
+          global_hist.RZVPhi->Fill(data.R, data.Z, data.VPhi);
+          global_hist.RZVZ->Fill(data.R, data.Z, data.VZ);*/
+        };
+
+        // older Boost on py1 does not have consume_all!!!
+
+        while (!search_done) {
+          // counter += plot_stack.consume_all(plotter);
+          while (plot_stack.pop(data)) {
+            plotter(data);
+            counter++;
+          }
+        }
+
         // counter += plot_stack.consume_all(plotter);
         while (plot_stack.pop(data)) {
           plotter(data);
           counter++;
         }
-      }
 
-      // counter += plot_stack.consume_all(plotter);
-      while (plot_stack.pop(data)) {
-        plotter(data);
-        counter++;
-      }
+        global_hist._hr.flush();
+        global_hist._xy.flush();
+        global_hist._rz.flush();
 
-      global_hist._hr.flush();
-      global_hist._xy.flush();
-      global_hist._rz.flush();
+        std::cout << "a histogram thread ended after processing " << counter
+                  << " values.\n";
+      });
 
-      std::cout << "a histogram thread ended after processing " << counter
-                << " values.\n";
-    });
-
-    boost::atomic<bool> search_aborted(false);
+      boost::atomic<bool> search_aborted(false);
 
 #pragma omp parallel shared(global_hist)
-    {
-#pragma omp single
       {
-        for (auto &it : db_index)
-          if (!search_aborted) {
+#pragma omp single
+        {
+          for (auto &it : db_index)
+            if (!search_aborted) {
 #pragma omp task
-            {
-              int hpx = it.first;
-              auto entry = it.second;
+              {
+                int hpx = it.first;
+                auto entry = it.second;
 
-              // for (size_t i = 0; i < pixels->size(); i++)
-              int tid = omp_get_thread_num();
-              bool abort_search = false;
+                // for (size_t i = 0; i < pixels->size(); i++)
+                int tid = omp_get_thread_num();
+                bool abort_search = false;
 
-              printf("parametric search through hpx %d\n", hpx);
+                printf("parametric search through hpx %d\n", hpx);
 
-              abort_search = search_gaia_db(hpx, entry, uuid, search, where,
-                                            thread_coords[tid], plot_stack,
-                                            queue); //, global_hist);
+                abort_search = search_gaia_db(hpx, entry, uuid, search, where,
+                                              thread_coords[tid], plot_stack,
+                                              queue); //, global_hist);
 
-              if (abort_search) {
-                search_aborted = true;
-                printf("cancelling a parallel OpenMP search loop.\n");
+                if (abort_search) {
+                  search_aborted = true;
+                  printf("cancelling a parallel OpenMP search loop.\n");
+                }
               }
             }
-          }
-      }
-    }
-
-    printf("OpenMP parallel for loop done.\n");
-
-    search_done = true;
-    plot_thread.join();
-    std::cout << "a global queue length: " << queue.queue.size() << std::endl;
-
-    if (!search_aborted) {
-      // save the histograms to disk
-      global_hist._hr.save(uuid, "hr");
-      global_hist._xy.save(uuid, "xy");
-      global_hist._rz.save(uuid, "rz");
-
-      // rename the temporary dir to just "DATA/uuid"
-      std::string tmp = "DATA/" + uuid + ".tmp";
-      std::string dir = "DATA/" + uuid;
-      rename(tmp.c_str(), dir.c_str());
-
-      // the H-R diagram
-      {
-          /*ReverseYData(global_hist._hr.hist);
-          global_hist._hr.hist->SetStats(false);
-          global_hist._hr.hist->GetXaxis()->SetTitle("(BP-RP) [mag]");
-          global_hist._hr.hist->GetYaxis()->SetTitle("M_{G} [mag]");*/
-          // global_hist->GetZaxis()->SetTitle("star density");
+        }
       }
 
-      // the X-Y plot
-      {
-          /*global_hist._xy.hist->SetStats(false);
-          global_hist._xy.hist->GetXaxis()->SetTitle("X [kpc]");
-          global_hist._xy.hist->GetYaxis()->SetTitle("Y [kpc]");
-          SetView2D(global_hist._xy.hist);*/
+      printf("OpenMP parallel for loop done.\n");
+
+      search_done = true;
+      plot_thread.join();
+      std::cout << "a global queue length: " << queue.queue.size() << std::endl;
+
+      if (!search_aborted) {
+        // save the histograms to disk
+        global_hist._hr.save(uuid, "hr");
+        global_hist._xy.save(uuid, "xy");
+        global_hist._rz.save(uuid, "rz");
+
+        // rename the temporary dir to just "DATA/uuid"
+        std::string tmp = "DATA/" + uuid + ".tmp";
+        std::string dir = "DATA/" + uuid;
+        rename(tmp.c_str(), dir.c_str());
+
+        // the H-R diagram
+        {
+            /*ReverseYData(global_hist._hr.hist);
+            global_hist._hr.hist->SetStats(false);
+            global_hist._hr.hist->GetXaxis()->SetTitle("(BP-RP) [mag]");
+            global_hist._hr.hist->GetYaxis()->SetTitle("M_{G} [mag]");*/
+            // global_hist->GetZaxis()->SetTitle("star density");
+        }
+
+        // the X-Y plot
+        {
+            /*global_hist._xy.hist->SetStats(false);
+            global_hist._xy.hist->GetXaxis()->SetTitle("X [kpc]");
+            global_hist._xy.hist->GetYaxis()->SetTitle("Y [kpc]");
+            SetView2D(global_hist._xy.hist);*/
+        }
+
+        // the R-Z plot
+        {
+            /*global_hist._rz.hist->SetStats(false);
+            global_hist._rz.hist->GetXaxis()->SetTitle("R [kpc]");
+            global_hist._rz.hist->GetYaxis()->SetTitle("Z [kpc]");
+            SetView2D(global_hist._rz.hist);*/
+        }
+
+        // the X-Y-VR plot
+        {
+            /*global_hist.XYVR->SetStats(false);
+            global_hist.XYVR->GetXaxis()->SetTitle("X [kpc]");
+            global_hist.XYVR->GetYaxis()->SetTitle("Y [kpc]");
+            global_hist.XYVR->GetZaxis()->SetTitle("V_{R} [km/s]");
+            SetView3D(global_hist.XYVR);*/
+        }
+
+        // the X-Y-VPhi plot
+        {
+            /*global_hist.XYVPhi->SetStats(false);
+            global_hist.XYVPhi->GetXaxis()->SetTitle("X [kpc]");
+            global_hist.XYVPhi->GetYaxis()->SetTitle("Y [kpc]");
+            global_hist.XYVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
+            SetView3D(global_hist.XYVPhi);*/
+        }
+
+        // the X-Y-VZ plot
+        {
+            /*global_hist.XYVZ->SetStats(false);
+            global_hist.XYVZ->GetXaxis()->SetTitle("X [kpc]");
+            global_hist.XYVZ->GetYaxis()->SetTitle("Y [kpc]");
+            global_hist.XYVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
+            SetView3D(global_hist.XYVZ);*/
+        }
+
+        // the R-Z-VR plot
+        {
+            /*global_hist.RZVR->SetStats(false);
+            global_hist.RZVR->GetXaxis()->SetTitle("R [kpc]");
+            global_hist.RZVR->GetYaxis()->SetTitle("Z [kpc]");
+            global_hist.RZVR->GetZaxis()->SetTitle("V_{R} [km/s]");
+            SetView3D(global_hist.RZVR);*/
+        }
+
+        // the R-Z-VPhi plot
+        {
+            /*global_hist.RZVPhi->SetStats(false);
+            global_hist.RZVPhi->GetXaxis()->SetTitle("R [kpc]");
+            global_hist.RZVPhi->GetYaxis()->SetTitle("Z [kpc]");
+            global_hist.RZVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
+            SetView3D(global_hist.RZVPhi);*/
+        }
+
+        // the R-Z-VZ plot
+        {
+          /*global_hist.RZVZ->SetStats(false);
+          global_hist.RZVZ->GetXaxis()->SetTitle("R [kpc]");
+          global_hist.RZVZ->GetYaxis()->SetTitle("Z [kpc]");
+          global_hist.RZVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
+          SetView3D(global_hist.RZVZ);*/
+        }
+      } else {
+        // purge the results
+        std::lock_guard<std::mutex> res_lock(results_mtx);
+        results.erase(uuid);
       }
 
-      // the R-Z plot
-      {
-          /*global_hist._rz.hist->SetStats(false);
-          global_hist._rz.hist->GetXaxis()->SetTitle("R [kpc]");
-          global_hist._rz.hist->GetYaxis()->SetTitle("Z [kpc]");
-          SetView2D(global_hist._rz.hist);*/
-      }
+      /*delete global_hist.XYVR;
+      delete global_hist.XYVPhi;
+      delete global_hist.XYVZ;
+      delete global_hist.RZVR;
+      delete global_hist.RZVPhi;
+      delete global_hist.RZVZ;*/
 
-      // the X-Y-VR plot
-      {
-          /*global_hist.XYVR->SetStats(false);
-          global_hist.XYVR->GetXaxis()->SetTitle("X [kpc]");
-          global_hist.XYVR->GetYaxis()->SetTitle("Y [kpc]");
-          global_hist.XYVR->GetZaxis()->SetTitle("V_{R} [km/s]");
-          SetView3D(global_hist.XYVR);*/
-      }
+      std::lock_guard<std::mutex> lock(requests_mtx);
+      requests.erase(uuid);
+    }).detach();
 
-      // the X-Y-VPhi plot
-      {
-          /*global_hist.XYVPhi->SetStats(false);
-          global_hist.XYVPhi->GetXaxis()->SetTitle("X [kpc]");
-          global_hist.XYVPhi->GetYaxis()->SetTitle("Y [kpc]");
-          global_hist.XYVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
-          SetView3D(global_hist.XYVPhi);*/
-      }
+    // respond with the dataset id
+    std::string html = uuid;
+    size_t size = html.length();
+    write_status(res, 200, "OK");
+    write_content_length(res, size);
+    write_content_type(res, "text/plain");
+    res->write("\r\n", 2);
+    res->write((const char *)html.data(), size);
+    res->write("\r\n\r\n", 4);
 
-      // the X-Y-VZ plot
-      {
-          /*global_hist.XYVZ->SetStats(false);
-          global_hist.XYVZ->GetXaxis()->SetTitle("X [kpc]");
-          global_hist.XYVZ->GetYaxis()->SetTitle("Y [kpc]");
-          global_hist.XYVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
-          SetView3D(global_hist.XYVZ);*/
-      }
+    return;
+  }
 
-      // the R-Z-VR plot
-      {
-          /*global_hist.RZVR->SetStats(false);
-          global_hist.RZVR->GetXaxis()->SetTitle("R [kpc]");
-          global_hist.RZVR->GetYaxis()->SetTitle("Z [kpc]");
-          global_hist.RZVR->GetZaxis()->SetTitle("V_{R} [km/s]");
-          SetView3D(global_hist.RZVR);*/
-      }
-
-      // the R-Z-VPhi plot
-      {
-          /*global_hist.RZVPhi->SetStats(false);
-          global_hist.RZVPhi->GetXaxis()->SetTitle("R [kpc]");
-          global_hist.RZVPhi->GetYaxis()->SetTitle("Z [kpc]");
-          global_hist.RZVPhi->GetZaxis()->SetTitle("V_{\\Phi} [km/s]");
-          SetView3D(global_hist.RZVPhi);*/
-      }
-
-      // the R-Z-VZ plot
-      {
-        /*global_hist.RZVZ->SetStats(false);
-        global_hist.RZVZ->GetXaxis()->SetTitle("R [kpc]");
-        global_hist.RZVZ->GetYaxis()->SetTitle("Z [kpc]");
-        global_hist.RZVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
-        SetView3D(global_hist.RZVZ);*/
-      }
-    } else {
-      // purge the results
-      std::lock_guard<std::mutex> res_lock(results_mtx);
-      results.erase(uuid);
-    }
-
-    /*delete global_hist.XYVR;
-    delete global_hist.XYVPhi;
-    delete global_hist.XYVZ;
-    delete global_hist.RZVR;
-    delete global_hist.RZVPhi;
-    delete global_hist.RZVZ;*/
-
-    std::lock_guard<std::mutex> lock(requests_mtx);
-    requests.erase(uuid);
-  }).detach();
-
-  /*std::string html = "GAIA DR2 WebQL::<ra:" + std::to_string(ra) + ", dec:" +
-  std::to_string(dec) + ", radius:" + std::to_string(radius) + "> --> job id:" +
-  uuid + ", hpx:" + std::to_string(idx) + ", searching pixels: ";
-
-  for (int i = 0; i < pixels->size(); i++)
-      html += std::to_string((*pixels)[i]) + " ";*/
+  // the result set already exists, prepare a full response
 
   std::string html =
       "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
