@@ -1084,6 +1084,11 @@ void execute_gaia(uWS::HttpResponse *res,
               "container"
               ">\n");
   html.append("<h1>GAIA DR2 WebQL</h1>");
+
+  html.append("<div id=\"hr\" style=\"width: 0px; height: 0px\"></div>");
+  html.append("<div id=\"rz\" style=\"width: 0px; height: 0px\"></div>");
+  html.append("<div id=\"xy\" style=\"width: 0px; height: 0px\"></div>");
+
   html.append("</div");
   html.append("</body></html>");
 
