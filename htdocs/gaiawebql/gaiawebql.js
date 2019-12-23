@@ -2,7 +2,7 @@ function get_js_version() {
     return "JS2019-12-23.0";
 }
 
-/*function open_websocket_connection() {
+function open_websocket_connection() {
     if ("WebSocket" in window) {
         // Let us open a web socket
         var loc = window.location, ws_uri;
@@ -86,21 +86,49 @@ function get_js_version() {
                         }
 
                         if (plots_received == plots_total/*data.total*/) {
-    $('#processing').remove();
-    $('#completed').remove();
-    $(".progress").remove();
-    gaia_ws.close();
-}
+                            $('#processing').remove();
+                            $('#completed').remove();
+                            $(".progress").remove();
+                            gaia_ws.close();
+                        }
                     }
                 } catch (e) {
-    console.error(e);
-}
+                    console.error(e);
+                }
             }
 
-if (evt.data instanceof ArrayBuffer) {
-    var dv = new DataView(received_msg);
-}
+            if (evt.data instanceof ArrayBuffer) {
+                var dv = new DataView(received_msg);
+            }
         });
     }
-}* /
+}
 
+function displayHR(obj) {
+    console.log(obj);
+}
+
+function displayRZ(obj) {
+    console.log(obj);
+}
+
+function displayXY(obj) {
+    console.log(obj);
+}
+
+function main() {
+    session_data = document.getElementById('session-data');
+    uuid = session_data.getAttribute('data-uuid');
+    where = session_data.getAttribute('data-where');
+
+    console.log("fetching plots for " + uuid);
+
+    var req = JSROOT.NewHttpRequest("DATA/" + uuid + "/hr.json", 'object', displayHR);
+    req.send(null);
+
+    var req = JSROOT.NewHttpRequest("DATA/" + uuid + "/rz.json", 'object', displayRZ);
+    req.send(null);
+
+    var req = JSROOT.NewHttpRequest("DATA/" + uuid + "/xy.json", 'object', displayXY);
+    req.send(null);
+}
