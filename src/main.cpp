@@ -261,7 +261,7 @@ void write_key_value(uWS::HttpResponse *res, std::string key,
 }
 
 void serve_file(uWS::HttpResponse *res, std::string uri) {
-  std::string resource = "htdocs" + uri;
+  std::string resource = /*"htdocs" +*/ uri;
 
   // strip '?' from the requested file name
   size_t pos = resource.find("?");
@@ -1177,7 +1177,16 @@ int main(int argc, char *argv[]) {
 
             // root
             if (uri == "/")
-              return serve_file(res, "/index.html");
+              return serve_file(res, "htdocs/index.html");
+
+            // serve plot data
+            if (uri.find("/gaiawebql/DATA") != std::string::npos) {
+              size_t pos = uri.find("DATA");
+              if (pos != std::string::npos) {
+                std::string file = uri.substr(pos, std::string::npos);
+                return serve_file(res, file);
+              }
+            }
 
             // GAIAWebQL entry
             if (uri.find("GAIAWebQL.html") != std::string::npos) {
@@ -1462,7 +1471,7 @@ int main(int argc, char *argv[]) {
               }
             }
 
-            return serve_file(res, uri);
+            return serve_file(res, "htdocs" + uri);
           });
 
           // This makes use of the SO_REUSEPORT of the Linux kernel
