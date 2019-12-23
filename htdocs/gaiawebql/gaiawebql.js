@@ -106,6 +106,19 @@ function open_websocket_connection() {
 
 function displayHR(obj) {
     console.log(obj);
+
+    var hr = JSROOT.CreateTH2(obj.NBINS, obj.NBINS);
+
+    for (var iy = 0; iy < obj.NBINS; iy++)
+        for (var ix = 0; ix < obj.NBINS; ix++) {
+            var bin = hr.getBin(ix + 1, iy + 1);
+            var val = obj.bins[iy][ix];
+            hr.setBinContent(bin, val);
+        }
+
+    JSROOT.redraw('hr', hr, "colz");
+
+    //resize the 'hr' HTML element
 }
 
 function displayRZ(obj) {
