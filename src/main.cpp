@@ -720,8 +720,19 @@ void execute_gaia(uWS::HttpResponse *res,
 
   // find out if the uuid has already been processed
   std::string dir = "DATA/" + uuid;
+  bool exists = false;
 
-  if (!std::filesystem::exists(dir)) {
+  if (std::filesystem::exists(dir))
+    exists = true;
+
+  // check if processing a request is already under way
+  {
+    std::lock_guard<std::mutex> req_lock(requests_mtx);
+    if (requests.find(uuid) != requests.end())
+      exists = true;
+  }
+
+  if (!exists) {
     {
       std::lock_guard<std::mutex> req_lock(requests_mtx);
       requests.insert(
