@@ -161,9 +161,9 @@ function main() {
     var req = JSROOT.NewHttpRequest("DATA/" + uuid + "/hr.json", 'object', displayHR);
     req.send(null);
 
-    var req = JSROOT.NewHttpRequest("DATA/" + uuid + "/rz.json", 'object', displayRZ);
+    var req = JSROOT.NewHttpRequest("DATA/" + uuid + "/xy.json", 'object', displayXY);
     req.send(null);
 
-    var req = JSROOT.NewHttpRequest("DATA/" + uuid + "/xy.json", 'object', displayXY);
+    var req = JSROOT.NewHttpRequest("DATA/" + uuid + "/rz.json", 'object', displayRZ);
     req.send(null);
 }
