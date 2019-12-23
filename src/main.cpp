@@ -718,19 +718,29 @@ void execute_gaia(uWS::HttpResponse *res,
                   std::shared_ptr<struct search_criteria> search,
                   std::string where, std::string uuid) {
 
+  // check if processing a request is already under way
+  {
+    std::lock_guard<std::mutex> req_lock(requests_mtx);
+    if (requests.find(uuid) != requests.end()) {
+      // respond with the dataset id
+      std::string html = uuid + " is being processed. Please check later.";
+      size_t size = html.length();
+      write_status(res, 202, "Accepted");
+      write_content_length(res, size);
+      write_content_type(res, "text/plain");
+      res->write("\r\n", 2);
+      res->write((const char *)html.data(), size);
+      res->write("\r\n\r\n", 4);
+      return;
+    }
+  }
+
   // find out if the uuid has already been processed
   std::string dir = "DATA/" + uuid;
   bool exists = false;
 
   if (std::filesystem::exists(dir))
     exists = true;
-
-  // check if processing a request is already under way
-  {
-    std::lock_guard<std::mutex> req_lock(requests_mtx);
-    if (requests.find(uuid) != requests.end())
-      exists = true;
-  }
 
   if (!exists) {
     {
@@ -1012,7 +1022,6 @@ void execute_gaia(uWS::HttpResponse *res,
     res->write("\r\n", 2);
     res->write((const char *)html.data(), size);
     res->write("\r\n\r\n", 4);
-
     return;
   }
 
@@ -1473,277 +1482,6 @@ int main(int argc, char *argv[]) {
             }
 
             return serve_file(res, uri);
-          });
-
-          h.onConnection([](uWS::WebSocket<uWS::SERVER> *ws,
-                            uWS::HttpRequest req) {
-            std::string url = req.getUrl().toString();
-            std::cout << "[µWS] onConnection URL(" << url << ")" << std::endl;
-
-            ws->setUserData(NULL);
-
-            std::size_t slash = url.find_last_of("/");
-            if (slash != std::string::npos) {
-              if (url.size() > slash) {
-                std::string job_id = url.substr(slash + 1, std::string::npos);
-                std::cout << "[µWS] job id: " << job_id << std::endl;
-
-                ws->setUserData(strdup(job_id.c_str()));
-
-                try {
-                  std::lock_guard<std::mutex> res_lock(results_mtx);
-                  auto result = results.at(job_id);
-                  bool erase = false;
-
-                  if (result->hr != "") {
-                    // send the result via websockets
-                    std::ostringstream json;
-
-                    json << "{";
-                    json << "\"type\" : \"plot\",";
-                    /*json << "\"thread\" : " << (max_threads + 1) << ",";
-            json << "\"total\" : " << (max_threads + 1) << ",";*/
-                    json << "\"thread\" : " << (1) << ",";
-                    // json << "\"total\" : " << (1) << ",";
-                    json << "\"density_plot\" : " << result->hr.c_str();
-                    json << "}";
-
-                    ws->send(json.str().c_str(), json.tellp(),
-                             uWS::OpCode::TEXT);
-                    erase = true;
-                  }
-
-                  if (result->xy != "") {
-                    // send the result via websockets
-                    std::ostringstream json;
-
-                    json << "{";
-                    json << "\"type\" : \"plot\",";
-                    /*json << "\"thread\" : " << (max_threads + 1) << ",";
-            json << "\"total\" : " << (max_threads + 1) << ",";*/
-                    json << "\"thread\" : " << (2) << ",";
-                    // json << "\"total\" : " << (1) << ",";
-                    json << "\"density_plot\" : " << result->xy.c_str();
-                    json << "}";
-
-                    ws->send(json.str().c_str(), json.tellp(),
-                             uWS::OpCode::TEXT);
-                    erase = true;
-                  }
-
-                  if (result->rz != "") {
-                    // send the result via websockets
-                    std::ostringstream json;
-
-                    json << "{";
-                    json << "\"type\" : \"plot\",";
-                    /*json << "\"thread\" : " << (max_threads + 1) << ",";
-            json << "\"total\" : " << (max_threads + 1) << ",";*/
-                    json << "\"thread\" : " << (3) << ",";
-                    // json << "\"total\" : " << (1) << ",";
-                    json << "\"density_plot\" : " << result->rz.c_str();
-                    json << "}";
-
-                    ws->send(json.str().c_str(), json.tellp(),
-                             uWS::OpCode::TEXT);
-                    erase = true;
-                  }
-
-                  if (result->xyvr != "") {
-                    // send the result via websockets
-                    std::ostringstream json;
-
-                    json << "{";
-                    json << "\"type\" : \"plot\",";
-                    /*json << "\"thread\" : " << (max_threads + 1) << ",";
-            json << "\"total\" : " << (max_threads + 1) << ",";*/
-                    json << "\"thread\" : " << (4) << ",";
-                    // json << "\"total\" : " << (1) << ",";
-                    json << "\"density_plot\" : " << result->xyvr.c_str();
-                    json << "}";
-
-                    ws->send(json.str().c_str(), json.tellp(),
-                             uWS::OpCode::TEXT);
-                    erase = true;
-                  }
-
-                  if (result->xyvphi != "") {
-                    // send the result via websockets
-                    std::ostringstream json;
-
-                    json << "{";
-                    json << "\"type\" : \"plot\",";
-                    /*json << "\"thread\" : " << (max_threads + 1) << ",";
-            json << "\"total\" : " << (max_threads + 1) << ",";*/
-                    json << "\"thread\" : " << (5) << ",";
-                    // json << "\"total\" : " << (1) << ",";
-                    json << "\"density_plot\" : " << result->xyvphi.c_str();
-                    json << "}";
-
-                    ws->send(json.str().c_str(), json.tellp(),
-                             uWS::OpCode::TEXT);
-                    erase = true;
-                  }
-
-                  if (result->xyvz != "") {
-                    // send the result via websockets
-                    std::ostringstream json;
-
-                    json << "{";
-                    json << "\"type\" : \"plot\",";
-                    /*json << "\"thread\" : " << (max_threads + 1) << ",";
-            json << "\"total\" : " << (max_threads + 1) << ",";*/
-                    json << "\"thread\" : " << (6) << ",";
-                    // json << "\"total\" : " << (1) << ",";
-                    json << "\"density_plot\" : " << result->xyvz.c_str();
-                    json << "}";
-
-                    ws->send(json.str().c_str(), json.tellp(),
-                             uWS::OpCode::TEXT);
-                    erase = true;
-                  }
-
-                  if (result->rzvr != "") {
-                    // send the result via websockets
-                    std::ostringstream json;
-
-                    json << "{";
-                    json << "\"type\" : \"plot\",";
-                    /*json << "\"thread\" : " << (max_threads + 1) << ",";
-            json << "\"total\" : " << (max_threads + 1) << ",";*/
-                    json << "\"thread\" : " << (7) << ",";
-                    // json << "\"total\" : " << (1) << ",";
-                    json << "\"density_plot\" : " << result->rzvr.c_str();
-                    json << "}";
-
-                    ws->send(json.str().c_str(), json.tellp(),
-                             uWS::OpCode::TEXT);
-                    erase = true;
-                  }
-
-                  if (result->rzvphi != "") {
-                    // send the result via websockets
-                    std::ostringstream json;
-
-                    json << "{";
-                    json << "\"type\" : \"plot\",";
-                    /*json << "\"thread\" : " << (max_threads + 1) << ",";
-            json << "\"total\" : " << (max_threads + 1) << ",";*/
-                    json << "\"thread\" : " << (8) << ",";
-                    // json << "\"total\" : " << (1) << ",";
-                    json << "\"density_plot\" : " << result->rzvphi.c_str();
-                    json << "}";
-
-                    ws->send(json.str().c_str(), json.tellp(),
-                             uWS::OpCode::TEXT);
-                    erase = true;
-                  }
-
-                  if (result->rzvz != "") {
-                    // send the result via websockets
-                    std::ostringstream json;
-
-                    json << "{";
-                    json << "\"type\" : \"plot\",";
-                    /*json << "\"thread\" : " << (max_threads + 1) << ",";
-            json << "\"total\" : " << (max_threads + 1) << ",";*/
-                    json << "\"thread\" : " << (9) << ",";
-                    // json << "\"total\" : " << (1) << ",";
-                    json << "\"density_plot\" : " << result->rzvz.c_str();
-                    json << "}";
-
-                    ws->send(json.str().c_str(), json.tellp(),
-                             uWS::OpCode::TEXT);
-                    erase = true;
-                  }
-
-                  if (erase)
-                    results.erase(job_id);
-                } catch (const std::out_of_range &err) {
-                  printf("no entry found in results for a job request %s\n",
-                         job_id.c_str());
-                  ws->terminate(); // force a connection close in a thread-safe
-                                   // manner (the status code will be 1006)
-                }
-
-                try {
-                  std::lock_guard<std::mutex> req_lock(requests_mtx);
-                  auto entry = requests.at(job_id);
-
-                  {
-                    std::lock_guard<std::mutex> lock(progress_mtx);
-                    progress_list.insert(std::make_pair(job_id, ws));
-
-                    // show content:
-                    /*for (auto &x : progress_list)
-                        std::cout << x.first << ": " << x.second << std::endl;*/
-                  }
-
-                  // send all completed jobs
-                  std::lock_guard<std::mutex> lock(entry->completed_mtx);
-                  size_t len = entry->completed.size();
-
-                  std::ostringstream json;
-                  json << "{ \"completed\" : " << len << ", \"elapsed\" : "
-                       << (std::time(nullptr) - entry->timestamp) << " }";
-
-                  ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-                } catch (const std::out_of_range &err) {
-                  printf("no entry found for a job request %s\n",
-                         job_id.c_str());
-                  // ws->terminate(); //force a connection close in a
-                  // thread-safe manner (the status code will be 1006)
-                }
-              }
-            }
-          });
-
-          h.onDisconnection([](uWS::WebSocket<uWS::SERVER> *ws, int code,
-                               char *message, size_t length) {
-            std::string msg = std::string(message, length);
-            std::cout << "[µWS] onDisconnection " << msg << " code: " << code
-                      << std::endl;
-
-            void *job_id = ws->getUserData();
-
-            if (job_id != NULL) {
-              // remove itself from the progress_list
-              std::lock_guard<std::mutex> lock(progress_mtx);
-              progress_list.erase(std::string((char *)job_id));
-
-              // client leaving, abort any search under way
-              if (code == 1001) {
-                try {
-                  std::lock_guard<std::mutex> req_lock(requests_mtx);
-                  auto entry = requests.at(std::string((char *)job_id));
-
-                  std::lock_guard<std::mutex> lock(entry->completed_mtx);
-                  entry->abort = true;
-                } catch (const std::out_of_range &err) {
-                  printf("no entry found for a job request %s\n",
-                         (char *)job_id);
-                }
-              }
-
-              // remove the results too
-              /*std::lock_guard res_lock(results_mtx);
-              results.erase(std::string((char *)job_id));*/
-
-              // show content:
-              /*for (auto &x : progress_list)
-                  std::cout << x.first << ": " << x.second << std::endl;*/
-
-              free(job_id);
-            }
-          });
-
-          h.onMessage([](uWS::WebSocket<uWS::SERVER> *ws, char *message,
-                         size_t length, uWS::OpCode opCode) {
-            // ws->send(message, length, opCode);
-
-            std::string msg = std::string(message, length);
-
-            std::cout << "[µWS] " << msg << std::endl;
           });
 
           // This makes use of the SO_REUSEPORT of the Linux kernel
