@@ -123,10 +123,32 @@ function displayHR(obj) {
 
 function displayRZ(obj) {
     console.log(obj);
+
+    var rz = JSROOT.CreateTH2(obj.NBINS, obj.NBINS);
+
+    for (var iy = 0; iy < obj.NBINS; iy++)
+        for (var ix = 0; ix < obj.NBINS; ix++) {
+            var bin = rz.getBin(ix + 1, iy + 1);
+            var val = obj.bins[iy][ix];
+            rz.setBinContent(bin, val);
+        }
+
+    JSROOT.redraw('rz', rz, "colz");
 }
 
 function displayXY(obj) {
     console.log(obj);
+
+    var xy = JSROOT.CreateTH2(obj.NBINS, obj.NBINS);
+
+    for (var iy = 0; iy < obj.NBINS; iy++)
+        for (var ix = 0; ix < obj.NBINS; ix++) {
+            var bin = xy.getBin(ix + 1, iy + 1);
+            var val = obj.bins[iy][ix];
+            xy.setBinContent(bin, val);
+        }
+
+    JSROOT.redraw('xy', xy, "colz");
 }
 
 function main() {
