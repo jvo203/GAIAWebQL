@@ -1035,8 +1035,6 @@ void execute_gaia(uWS::HttpResponse *res,
   html.append(
       "<link href=\"https://fonts.googleapis.com/css?family=Material+Icons\" "
       "rel=\"stylesheet\"/>\n");
-  html.append("<script src=\"reconnecting-websocket.js?" VERSION_STRING
-              "\" defer></script>\n");
   html.append("<script "
               "src=\"//cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/"
               "numeral.min.js\"></script>\n");
@@ -1059,9 +1057,9 @@ void execute_gaia(uWS::HttpResponse *res,
               "bootstrap.min.js\"></script>\n");
 
   // CERN ROOT JS
-  html.append(
-      "<script type=\"text/javascript\" "
-      "src=\"https://root.cern/js/latest/scripts/JSRootCore.min.js?hist&onload=fetch_data\"></script>");
+  html.append("<script type=\"text/javascript\" "
+              "src=\"https://root.cern/js/latest/scripts/"
+              "JSRootCore.min.js?hist&onload=main\"></script>");
 
   // GAIAWebQL main JavaScript + CSS
   html.append("<script src=\"gaiawebql.js?" VERSION_STRING
@@ -1085,11 +1083,8 @@ void execute_gaia(uWS::HttpResponse *res,
               " class="
               "container"
               ">\n");
-  html.append("<h1>GAIA DR2 WebQL</h1>");  
+  html.append("<h1>GAIA DR2 WebQL</h1>");
   html.append("</div");
-
-  // html.append(R"(<script>main();</script>)");
-
   html.append("</body></html>");
 
   size_t size = html.length();
