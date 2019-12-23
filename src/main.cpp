@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2019-12-11.0"
+#define VERSION_STRING "SV2019-12-23.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -1059,7 +1059,7 @@ void execute_gaia(uWS::HttpResponse *res,
   // CERN ROOT JS
   html.append("<script type=\"text/javascript\" "
               "src=\"https://root.cern/js/latest/scripts/"
-              "JSRootCore.min.js?hist&onload=main\"></script>");
+              "JSRootCore.min.js?more2d&onload=main\"></script>");
 
   // GAIAWebQL main JavaScript + CSS
   html.append("<script src=\"gaiawebql.js?" VERSION_STRING
