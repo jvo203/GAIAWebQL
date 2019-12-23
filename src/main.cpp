@@ -1025,7 +1025,7 @@ void execute_gaia(uWS::HttpResponse *res,
     return;
   }
 
-  // the result set already exists, prepare a full response
+  // the result-set already exists, prepare a full response
 
   std::string html =
       "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
@@ -1058,17 +1058,16 @@ void execute_gaia(uWS::HttpResponse *res,
               "src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/"
               "bootstrap.min.js\"></script>\n");
 
+  // CERN ROOT JS
+  html.append(
+      "<script type=\"text/javascript\" "
+      "src=\"https://root.cern/js/latest/scripts/JSRootCore.min.js?hist&onload=fetch_data\"></script>");
+
   // GAIAWebQL main JavaScript + CSS
   html.append("<script src=\"gaiawebql.js?" VERSION_STRING
               "\" defer></script>\n");
   // html.append("<link rel=\"stylesheet\" href=\"gaiawebql.css?" VERSION_STRING
   // "\"/>\n");
-
-#ifdef PRODUCTION
-  html.append(R"(<script>var WS_SOCKET = 'wss://';</script>)");
-#else
-  html.append(R"(<script>var WS_SOCKET = 'ws://';</script>)");
-#endif
 
   // HTML content
   html.append("<title>GAIA DR2 WebQL</title></head><body>\n");
@@ -1086,20 +1085,7 @@ void execute_gaia(uWS::HttpResponse *res,
               " class="
               "container"
               ">\n");
-  // html.append("<h1>GAIA DR2 WebQL</h1>");
-  html.append("<h3 id=\"coords\"></h3>");
-  html.append(
-      "<h3 id=\"processing\">processing request; #HEALPix search pixels: " +
-      std::to_string(db_index.size()) + "</h3>");
-  html.append("<h3 id="
-              "completed"
-              "></h3>");
-  html.append("<div class=\"progress\">");
-  html.append("<div id=\"progress-bar\" class=\"progress-bar progress-bar-info "
-              "progress-bar-striped\" role=\"progressbar\" aria-valuenow=0 "
-              "aria-valuemin=0 aria-valuemax=" +
-              std::to_string(db_index.size()) +
-              " style=\"width:0%\">0/0</div></div>");
+  html.append("<h1>GAIA DR2 WebQL</h1>");  
   html.append("</div");
 
   // html.append(R"(<script>main();</script>)");
