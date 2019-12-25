@@ -764,7 +764,7 @@ void execute_gaia(uWS::HttpResponse *res,
       // //(max_threads);
       std::vector<std::shared_ptr<OmniCoords>> thread_coords(max_threads);
 
-      struct gaia_hist global_hist {};
+      struct gaia_hist global_hist {SeedH2(true), SeedH2(), SeedH2()};
       char name[255];
 
       global_hist._hr.set_title("Hertzsprung-Russell diagram");
@@ -1087,7 +1087,7 @@ void execute_gaia(uWS::HttpResponse *res,
 
   html.append("<div id=\"hr\" style=\"width: 800px; height: 600px\"></div>");
   html.append("<div id=\"xy\" style=\"width: 800px; height: 600px\"></div>");
-  html.append("<div id=\"rz\" style=\"width: 800px; height: 600px\"></div>");  
+  html.append("<div id=\"rz\" style=\"width: 800px; height: 600px\"></div>");
 
   html.append("</div");
   html.append("</body></html>");
