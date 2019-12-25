@@ -9,8 +9,14 @@
 
 #include "SeedHist2D.hpp"
 
+#include <boost/lexical_cast.hpp>
+#include <boost/uuid/uuid.hpp>            // uuid class
+#include <boost/uuid/uuid_generators.hpp> // generators
+#include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
+
 SeedH2::SeedH2(bool _invert) {
   title = "_x <=> _y";
+  _hist = NULL;
   init_done = false;
   invert = _invert;
   data.reserve(BURN_IN);
@@ -23,14 +29,17 @@ SeedH2::SeedH2(bool _invert) {
 SeedH2::~SeedH2() {
   printf("%s x_min: %f x_max: %f; y_min: %f, y_max: %f\n", title.c_str(), x_min,
          x_max, y_min, y_max);
+
+  if (_hist != NULL)
+    delete _hist;
 };
 
 void SeedH2::update(float _x, float _y) {
   if (!init_done)
     data.push_back(std::make_tuple(_x, _y));
   else {
-    // update a Boost.Histogram
-    //_hist(_x, _y);
+    // update a histogram
+    _hist->Fill(_x, _y);
   }
 
   if (data.size() == BURN_IN)
@@ -93,11 +102,18 @@ void SeedH2::flush() {
                         bh::axis::option::growth_t>(NBINS, y_min, y_max,
      "_y"));*/
 
+  boost::uuids::uuid uuid = boost::uuids::random_generator()();
+  std::string name = boost::lexical_cast<std::string>(uuid);
+
+  _hist = new TH2D(name.c_str(), title.c_str(), NBINS, x_min, x_max, NBINS,
+                   y_min, y_max);
+  _hist->SetCanExtend(TH1::kAllAxes);
+
   for (auto &x : data) {
     double _x, _y;
     std::tie(_x, _y) = x;
 
-    //_hist(_x, _y);
+    _hist->Fill(_x, _y);
   }
 
   data.clear();
@@ -110,7 +126,7 @@ void SeedH2::save(std::string uuid, std::string type) {
   std::cout << "saving " << title << " into " << filename << std::endl;
 
   // mkdir DATA/<uuid>.tmp
-  /*std::string tmp = "DATA/" + uuid + ".tmp";
+  std::string tmp = "DATA/" + uuid + ".tmp";
 
   if (mkdir(tmp.c_str(), 0777) != 0) {
     // return only in case of errors other than "directory already exists"
@@ -120,11 +136,21 @@ void SeedH2::save(std::string uuid, std::string type) {
     }
   }
 
-  x_min = _hist.axis(0).value(0);
+  /*x_min = _hist.axis(0).value(0);
   x_max = _hist.axis(0).value(NBINS - 1);
 
   y_min = _hist.axis(1).value(0);
-  y_max = _hist.axis(1).value(NBINS - 1);
+  y_max = _hist.axis(1).value(NBINS - 1);*/
+
+  TAxis *axis;
+
+  axis = _hist->GetXaxis();
+  x_min = axis->GetBinCenter(0);
+  x_max = axis->GetBinCenter(NBINS - 1);
+
+  axis = _hist->GetYaxis();
+  y_min = axis->GetBinCenter(0);
+  y_max = axis->GetBinCenter(NBINS - 1);
 
   // write the bin data
   {
@@ -143,7 +169,10 @@ void SeedH2::save(std::string uuid, std::string type) {
     for (int j = 0; j < NBINS; j++) {
       json << "[";
       for (int i = 0; i < NBINS; i++) {
-        json << _hist.at(i, j);
+        // json << _hist.at(i, j);
+        Int_t a = _hist->GetBin(i, j);
+        auto value = _hist->GetBinContent(a);
+        json << value;
 
         if (i != NBINS - 1)
           json << ",";
@@ -156,5 +185,5 @@ void SeedH2::save(std::string uuid, std::string type) {
 
     json << "]}\n";
     json.close();
-  }*/
+  }
 };

@@ -5,6 +5,9 @@
 #include <tuple>
 #include <vector>
 
+// CERN ROOT
+#include <TH2.h>
+
 /*#include <boost/histogram.hpp>
 namespace bh = boost::histogram;*/
 
@@ -35,5 +38,6 @@ private:
   std::vector<std::tuple<float, float>> data;
   bool init_done;
   bool invert;
-  //histogram_t _hist;
+  // histogram_t _hist;
+  TH2 *_hist;
 };

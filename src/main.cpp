@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2019-12-23.0"
+#define VERSION_STRING "SV2019-12-25.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -37,6 +37,9 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
+
+// CERN ROOT
+#include <TROOT.h>
 
 #include "PJMCoords.h"
 
@@ -1152,6 +1155,7 @@ void SetView3D(TH3 *h) {
 
 int main(int argc, char *argv[]) {
   curl_global_init(CURL_GLOBAL_ALL);
+  ROOT::EnableThreadSafety();
 
   // load the db healpix index file
   load_db_index("gaiadr2-table.dat");
