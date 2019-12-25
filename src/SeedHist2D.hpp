@@ -38,7 +38,7 @@ private:
   std::vector<std::tuple<float, float>> data;
   bool init_done;
 
-  histogram_t hist_;
+  histogram_t _hist;
 
   // a custom histogram
   /*float x_axis[NO_BINS + 1];
