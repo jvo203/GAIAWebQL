@@ -50,6 +50,9 @@ void SeedH2::update(float _x, float _y) {
   else {
     // a custom histogram
     this->fill(_x, _y);
+
+    // Boost.Histogram
+    _hist(_x, _y);
   }
 
   if (data.size() == BURN_IN)
@@ -213,12 +216,20 @@ void SeedH2::flush() {
   }
 
   // allocate a new Boost.Histogram
-  _hist =
-      bh::make_histogram(bh::axis::regular<float>(NBINS, x_min, x_max, "_x"),
-                         bh::axis::regular<float>(NBINS, y_min, y_max, "_y"));
+  _hist = bh::make_histogram(
+      bh::axis::regular<double, bh::use_default, bh::use_default,
+                        bh::axis::option::growth_t>(NBINS, x_min, x_max, "_x"),
+      bh::axis::regular<double, bh::use_default, bh::use_default,
+                        bh::axis::option::growth_t>(NBINS, y_min, y_max, "_y"));
+
+  for (auto &x : data) {
+    double _x, _y;
+    std::tie(_x, _y) = x;
+
+    _hist(_x, _y);
+  }
 
   data.clear();
-
   init_done = true;
 }
 
@@ -238,6 +249,12 @@ void SeedH2::save(std::string uuid, std::string type) {
     }
   }
 
+  x_min = _hist.axis(0).value(0);
+  x_max = _hist.axis(0).value(NBINS - 1);
+
+  y_min = _hist.axis(1).value(0);
+  y_max = _hist.axis(1).value(NBINS - 1);
+
   // write the bin data
   {
     filename = tmp + "/" + type + ".json";
@@ -255,7 +272,8 @@ void SeedH2::save(std::string uuid, std::string type) {
     for (int j = 0; j < NBINS; j++) {
       json << "[";
       for (int i = 0; i < NBINS; i++) {
-        json << bin_data[j][i];
+        // json << bin_data[j][i];
+        json << _hist.at(j, i);
 
         if (i != NBINS - 1)
           json << ",";
