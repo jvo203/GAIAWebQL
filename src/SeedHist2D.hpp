@@ -12,12 +12,15 @@ namespace bh = boost::histogram;
 #define NBINS 600
 #define SCALE 1.67
 
-using histogram_t =
-    decltype(bh::make_histogram(bh::axis::regular<>(), bh::axis::regular<>()));
+using histogram_t = decltype(bh::make_histogram(
+    bh::axis::regular<double, bh::use_default, bh::use_default,
+                      bh::axis::option::growth_t>(),
+    bh::axis::regular<double, bh::use_default, bh::use_default,
+                      bh::axis::option::growth_t>()));
 
 class SeedH2 {
 public:
-  SeedH2();
+  SeedH2(bool _invert = false);
   ~SeedH2();
 
 public:
@@ -27,22 +30,11 @@ public:
   void save(std::string uuid, std::string type);
 
 private:
-  void fill(float _x, float _y);
-  void rebin_x(double x_min_new, double x_max_new);
-  void rebin_y(double y_min_new, double y_max_new);
-
-private:
   std::string title;
   double x_min, x_max;
   double y_min, y_max;
   std::vector<std::tuple<float, float>> data;
   bool init_done;
-
+  bool invert;
   histogram_t _hist;
-
-  // a custom histogram
-  /*float x_axis[NO_BINS + 1];
-  float y_axis[NO_BINS + 1];*/
-  // uint64_t bin_data[NBINS][NBINS];
-  uint64_t **bin_data;
 };
