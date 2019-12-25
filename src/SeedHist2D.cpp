@@ -11,8 +11,8 @@
 
 SeedH2::SeedH2(bool _invert) {
   title = "_x <=> _y";
-  invert = _invert;
   init_done = false;
+  invert = _invert;
   data.reserve(BURN_IN);
   x_min = -FLT_MAX;
   x_max = FLT_MAX;
@@ -30,7 +30,7 @@ void SeedH2::update(float _x, float _y) {
     data.push_back(std::make_tuple(_x, _y));
   else {
     // update a Boost.Histogram
-    _hist(_x, _y);
+    //_hist(_x, _y);
   }
 
   if (data.size() == BURN_IN)
@@ -86,17 +86,18 @@ void SeedH2::flush() {
   }*/
 
   // allocate a new Boost.Histogram
-  _hist = bh::make_histogram(
+  /*_hist = bh::make_histogram(
       bh::axis::regular<double, bh::use_default, bh::use_default,
                         bh::axis::option::growth_t>(NBINS, x_min, x_max, "_x"),
       bh::axis::regular<double, bh::use_default, bh::use_default,
-                        bh::axis::option::growth_t>(NBINS, y_min, y_max, "_y"));
+                        bh::axis::option::growth_t>(NBINS, y_min, y_max,
+     "_y"));*/
 
   for (auto &x : data) {
     double _x, _y;
     std::tie(_x, _y) = x;
 
-    _hist(_x, _y);
+    //_hist(_x, _y);
   }
 
   data.clear();
@@ -109,7 +110,7 @@ void SeedH2::save(std::string uuid, std::string type) {
   std::cout << "saving " << title << " into " << filename << std::endl;
 
   // mkdir DATA/<uuid>.tmp
-  std::string tmp = "DATA/" + uuid + ".tmp";
+  /*std::string tmp = "DATA/" + uuid + ".tmp";
 
   if (mkdir(tmp.c_str(), 0777) != 0) {
     // return only in case of errors other than "directory already exists"
@@ -122,13 +123,8 @@ void SeedH2::save(std::string uuid, std::string type) {
   x_min = _hist.axis(0).value(0);
   x_max = _hist.axis(0).value(NBINS - 1);
 
-  if (!invert) {
-    y_min = _hist.axis(1).value(0);
-    y_max = _hist.axis(1).value(NBINS - 1);
-  } else {
-    y_max = _hist.axis(1).value(0);
-    y_min = _hist.axis(1).value(NBINS - 1);
-  }
+  y_min = _hist.axis(1).value(0);
+  y_max = _hist.axis(1).value(NBINS - 1);
 
   // write the bin data
   {
@@ -147,9 +143,7 @@ void SeedH2::save(std::string uuid, std::string type) {
     for (int j = 0; j < NBINS; j++) {
       json << "[";
       for (int i = 0; i < NBINS; i++) {
-        json << _hist.at(i, invert
-                                ? (NBINS - 1 - j)
-                                : j); // invert the Y axis for the H-R diagram
+        json << _hist.at(i, j);
 
         if (i != NBINS - 1)
           json << ",";
@@ -162,5 +156,5 @@ void SeedH2::save(std::string uuid, std::string type) {
 
     json << "]}\n";
     json.close();
-  }
+  }*/
 };

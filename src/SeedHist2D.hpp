@@ -5,18 +5,17 @@
 #include <tuple>
 #include <vector>
 
-#include <boost/histogram.hpp>
-namespace bh = boost::histogram;
+/*#include <boost/histogram.hpp>
+namespace bh = boost::histogram;*/
 
 #define BURN_IN 1000000
 #define NBINS 600
-#define SCALE 1.67
 
-using histogram_t = decltype(bh::make_histogram(
+/*using histogram_t = decltype(bh::make_histogram(
     bh::axis::regular<double, bh::use_default, bh::use_default,
                       bh::axis::option::growth_t>(),
     bh::axis::regular<double, bh::use_default, bh::use_default,
-                      bh::axis::option::growth_t>()));
+                      bh::axis::option::growth_t>()));*/
 
 class SeedH2 {
 public:
@@ -36,5 +35,5 @@ private:
   std::vector<std::tuple<float, float>> data;
   bool init_done;
   bool invert;
-  histogram_t _hist;
+  //histogram_t _hist;
 };

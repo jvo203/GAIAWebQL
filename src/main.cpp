@@ -182,6 +182,12 @@ struct gaia_hist {
   TH3 *RZVR;
   TH3 *RZVPhi;
   TH3 *RZVZ;*/
+
+  gaia_hist() {
+    _hr = SeedH2(true);
+    _xy = SeedH2(false);
+    _rz = SeedH2(false);
+  }
 };
 
 std::mutex root_mtx;
@@ -764,7 +770,7 @@ void execute_gaia(uWS::HttpResponse *res,
       // //(max_threads);
       std::vector<std::shared_ptr<OmniCoords>> thread_coords(max_threads);
 
-      struct gaia_hist global_hist {SeedH2(true), SeedH2(), SeedH2()};
+      struct gaia_hist global_hist;
       char name[255];
 
       global_hist._hr.set_title("Hertzsprung-Russell diagram");
