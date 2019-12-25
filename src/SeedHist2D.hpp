@@ -12,7 +12,8 @@ namespace bh = boost::histogram;
 #define NBINS 600
 #define SCALE 1.67
 
-using histogram_t = decltype(bh::make_histogram(bh::axis::regular<>(), bh::axis::regular<>()));
+using histogram_t =
+    decltype(bh::make_histogram(bh::axis::regular<>(), bh::axis::regular<>()));
 
 class SeedH2 {
 public:
