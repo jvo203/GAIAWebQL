@@ -5,12 +5,14 @@
 #include <tuple>
 #include <vector>
 
-/*#include <boost/histogram.hpp>
-using namespace boost::histogram;*/
+#include <boost/histogram.hpp>
+namespace bh = boost::histogram;
 
 #define BURN_IN 1000000
 #define NBINS 600
 #define SCALE 1.67
+
+using histogram_t = decltype(bh::make_histogram(bh::axis::regular<>(), bh::axis::regular<>()));
 
 class SeedH2 {
 public:
@@ -34,6 +36,8 @@ private:
   double y_min, y_max;
   std::vector<std::tuple<float, float>> data;
   bool init_done;
+
+  histogram_t hist_;
 
   // a custom histogram
   /*float x_axis[NO_BINS + 1];
