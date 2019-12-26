@@ -9,6 +9,9 @@
 
 #include "SeedHist2D.hpp"
 
+#include <TCanvas.h>
+#include <TGaxis.h>
+
 #include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid.hpp>            // uuid class
 #include <boost/uuid/uuid_generators.hpp> // generators
@@ -91,6 +94,9 @@ void SeedH2::flush() {
   _hist = new TH2D(name.c_str(), title.c_str(), NBINS, x_min, x_max, NBINS,
                    y_min, y_max);
   _hist->SetCanExtend(TH1::kAllAxes);
+  _hist->SetStats(false);
+  _hist->GetXaxis()->SetTitle(x_title.c_str());
+  _hist->GetYaxis()->SetTitle(y_title.c_str());
 
   for (auto &x : data) {
     double _x, _y;
@@ -101,6 +107,40 @@ void SeedH2::flush() {
 
   data.clear();
   init_done = true;
+}
+
+void SeedH2::ReverseYAxis(TH1 *h) {
+  // Remove the current axis
+  h->GetYaxis()->SetLabelOffset(999);
+  h->GetYaxis()->SetTickLength(0);
+  // Redraw the new axis
+  gPad->Update();
+  TGaxis *newaxis =
+      new TGaxis(gPad->GetUxmin(), gPad->GetUymax(), gPad->GetUxmin() - 0.001,
+                 gPad->GetUymin(), h->GetYaxis()->GetXmin(),
+                 h->GetYaxis()->GetXmax(), 510, "+");
+  newaxis->SetLabelOffset(-0.03);
+  newaxis->Draw();
+}
+
+void SeedH2::ReverseYData(TH2 *h) {
+  Int_t nx = h->GetNbinsX();
+  Int_t ny = h->GetNbinsY();
+
+  for (Int_t i = 0; i < nx; i++) {
+    for (Int_t j = 0; j < ny / 2; j++) {
+      Int_t a = h->GetBin(i, j);
+      Int_t b = h->GetBin(i, ny - 1 - j);
+
+      auto tmp = h->GetBinContent(a);
+      auto tmp2 = h->GetBinContent(b);
+
+      h->SetBinContent(a, tmp2);
+      h->SetBinContent(b, tmp);
+    }
+  }
+
+  h->ComputeIntegral();
 }
 
 void SeedH2::save(std::string uuid, std::string type) {

@@ -17,13 +17,21 @@ public:
   ~SeedH2();
 
 public:
-  void set_title(std::string _title) { title = _title; };
+  void set_title(std::string _title, std::string _x_axis, std::string _y_axis) {
+    title = _title;
+    x_title = _x_axis;
+    y_title = _y_axis;
+  };
   void update(float _x, float _y);
   void flush();
   void save(std::string uuid, std::string type);
 
 private:
-  std::string title;
+  void ReverseYAxis(TH1 *h);
+  void ReverseYData(TH2 *h);
+
+private:
+  std::string title, x_title, y_title;
   double x_min, x_max;
   double y_min, y_max;
   std::vector<std::tuple<float, float>> data;
