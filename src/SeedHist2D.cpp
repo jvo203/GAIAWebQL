@@ -10,6 +10,7 @@
 #include "SeedHist2D.hpp"
 
 #include <TCanvas.h>
+#include <TFile.h>
 #include <TGaxis.h>
 
 #include <boost/lexical_cast.hpp>
@@ -88,8 +89,8 @@ void SeedH2::flush() {
   printf("[%s] x_min: %f x_max: %f y_min: %f y_max: %f\n", title.c_str(), x_min,
          x_max, y_min, y_max);
 
-  boost::uuids::uuid uuid = boost::uuids::random_generator()();
-  std::string name = boost::lexical_cast<std::string>(uuid);
+  /*boost::uuids::uuid uuid = boost::uuids::random_generator()();
+  std::string name = boost::lexical_cast<std::string>(uuid);*/
 
   _hist = new TH2D(name.c_str(), title.c_str(), NBINS, x_min, x_max, NBINS,
                    y_min, y_max);
@@ -141,6 +142,30 @@ void SeedH2::ReverseYData(TH2 *h) {
   }
 
   h->ComputeIntegral();
+}
+
+void SeedH2::export_root(std::string uuid, std::string type) {
+  std::string filename = "DATA/" + uuid + "/" + type + ".root";
+
+  std::cout << "saving " << title << " into " << filename << std::endl;
+
+  // mkdir DATA/<uuid>.tmp
+  std::string tmp = "DATA/" + uuid + ".tmp";
+
+  if (mkdir(tmp.c_str(), 0777) != 0) {
+    // return only in case of errors other than "directory already exists"
+    if (errno != EEXIST) {
+      perror(title.c_str());
+      return;
+    }
+  }
+
+  filename = tmp + "/" + type + ".root";
+  TFile outputFile(filename.c_str(), "RECREATE");
+  outputFile.SetCompressionLevel(
+      ROOT::RCompressionSetting::ELevel::kDefaultZLIB);
+  _hist->Write();
+  outputFile.Close();
 }
 
 void SeedH2::save(std::string uuid, std::string type) {

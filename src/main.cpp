@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2019-12-25.0"
+#define VERSION_STRING "SV2019-12-26.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -347,6 +347,9 @@ void serve_file(uWS::HttpResponse *res, std::string uri) {
 
         if (ext == "wasm")
           write_content_type(res, "application/wasm");
+
+        if (ext == "root")
+          write_content_type(res, "application/octet-stream");
       }
 
       res->write("\r\n", 2);
@@ -776,10 +779,10 @@ void execute_gaia(uWS::HttpResponse *res,
       struct gaia_hist global_hist;
       char name[255];
 
-      global_hist._hr.set_title("Hertzsprung-Russell diagram", "(BP-RP) [mag]",
-                                "M_{G} [mag]");
-      global_hist._xy.set_title("X-Y", "X [kpc]", "Y [kpc]");
-      global_hist._rz.set_title("R-Z", "R [kpc]", "Z [kpc]");
+      global_hist._hr.set_title("HR", "Hertzsprung-Russell diagram",
+                                "(BP-RP) [mag]", "M_{G} [mag]");
+      global_hist._xy.set_title("XY", "X-Y", "X [kpc]", "Y [kpc]");
+      global_hist._rz.set_title("RZ", "R-Z", "R [kpc]", "Z [kpc]");
 
       // 3D histograms
       /*sprintf(name, "%s/XYVR", uuid.c_str());
@@ -919,9 +922,9 @@ void execute_gaia(uWS::HttpResponse *res,
 
       if (!search_aborted) {
         // save the histograms to disk
-        global_hist._hr.save(uuid, "hr");
-        global_hist._xy.save(uuid, "xy");
-        global_hist._rz.save(uuid, "rz");
+        global_hist._hr.export_root(uuid, "hr");
+        global_hist._xy.export_root(uuid, "xy");
+        global_hist._rz.export_root(uuid, "rz");
 
         // rename the temporary dir to just "DATA/uuid"
         std::string tmp = "DATA/" + uuid + ".tmp";
@@ -1069,7 +1072,7 @@ void execute_gaia(uWS::HttpResponse *res,
   // CERN ROOT JS
   html.append("<script type=\"text/javascript\" "
               "src=\"https://root.cern/js/latest/scripts/"
-              "JSRootCore.min.js?more2d&onload=main\"></script>");
+              "JSRootCore.min.js?more2d&io&onload=main\"></script>");
 
   // GAIAWebQL main JavaScript + CSS
   html.append("<script src=\"gaiawebql.js?" VERSION_STRING
@@ -1093,9 +1096,11 @@ void execute_gaia(uWS::HttpResponse *res,
               " class="
               "container"
               ">\n");
-  html.append("<h1>GAIA DR2 WebQL</h1>");
+
+  // html.append("<h1>GAIA DR2 WebQL</h1>");
 
   html.append("<div id=\"hr\" style=\"width: 800px; height: 600px\"></div>");
+  html.append("<div id=\"mg\"></div>");
   html.append("<div id=\"xy\" style=\"width: 800px; height: 600px\"></div>");
   html.append("<div id=\"rz\" style=\"width: 800px; height: 600px\"></div>");
 
