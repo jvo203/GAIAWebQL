@@ -85,23 +85,6 @@ void SeedH2::flush() {
   printf("[%s] x_min: %f x_max: %f y_min: %f y_max: %f\n", title.c_str(), x_min,
          x_max, y_min, y_max);
 
-  // make a custom histogram
-  /*double dx = (x_max - x_min) / double(NO_BINS);
-  double dy = (y_max - y_min) / double(NO_BINS);
-
-  for (int i = 0; i < NO_BINS + 1; i++) {
-    x_axis[i] = x_min + double(i) * dx;
-    y_axis[i] = y_min + double(i) * dy;
-  }*/
-
-  // allocate a new Boost.Histogram
-  /*_hist = bh::make_histogram(
-      bh::axis::regular<double, bh::use_default, bh::use_default,
-                        bh::axis::option::growth_t>(NBINS, x_min, x_max, "_x"),
-      bh::axis::regular<double, bh::use_default, bh::use_default,
-                        bh::axis::option::growth_t>(NBINS, y_min, y_max,
-     "_y"));*/
-
   boost::uuids::uuid uuid = boost::uuids::random_generator()();
   std::string name = boost::lexical_cast<std::string>(uuid);
 
@@ -136,12 +119,6 @@ void SeedH2::save(std::string uuid, std::string type) {
     }
   }
 
-  /*x_min = _hist.axis(0).value(0);
-  x_max = _hist.axis(0).value(NBINS - 1);
-
-  y_min = _hist.axis(1).value(0);
-  y_max = _hist.axis(1).value(NBINS - 1);*/
-
   TAxis *axis;
 
   axis = _hist->GetXaxis();
@@ -169,7 +146,6 @@ void SeedH2::save(std::string uuid, std::string type) {
     for (int j = 0; j < NBINS; j++) {
       json << "[";
       for (int i = 0; i < NBINS; i++) {
-        // json << _hist.at(i, j);
         Int_t a = _hist->GetBin(i, j);
         auto value = _hist->GetBinContent(a);
         json << value;
