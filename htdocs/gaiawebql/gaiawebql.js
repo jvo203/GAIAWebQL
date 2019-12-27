@@ -1,5 +1,5 @@
 function get_js_version() {
-    return "JS2019-12-26.0";
+    return "JS2019-12-27.0";
 }
 
 function main() {
@@ -11,7 +11,7 @@ function main() {
     console.log("fetching plots for " + uuid);
 
     new JSROOT.TFile("DATA/" + uuid + "/hr.root", function (file) {
-        file.ReadObject("HR", function (obj) {
+        file.ReadObject(uuid + "::HR", function (obj) {
             JSROOT.draw("hr", obj, "colz");
             var html = '<p>M<SUB>G</SUB> = phot_g_mean_mag + 5 + 5 log<SUB>10</SUB>(parallax / 1000)';
 
@@ -25,13 +25,13 @@ function main() {
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xy.root", function (file) {
-        file.ReadObject("XY", function (obj) {
+        file.ReadObject(uuid + "::XY", function (obj) {
             JSROOT.draw("xy", obj, "colz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rz.root", function (file) {
-        file.ReadObject("RZ", function (obj) {
+        file.ReadObject(uuid + "::RZ", function (obj) {
             JSROOT.draw("rz", obj, "colz");
         });
     });
