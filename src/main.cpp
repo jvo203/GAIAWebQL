@@ -779,10 +779,10 @@ void execute_gaia(uWS::HttpResponse *res,
       struct gaia_hist global_hist;
       char name[255];
 
-      global_hist._hr.set_title("HR", "Hertzsprung-Russell diagram",
+      global_hist._hr.set_title(uuid + "::HR", "Hertzsprung-Russell diagram",
                                 "(BP-RP) [mag]", "M_{G} [mag]");
-      global_hist._xy.set_title("XY", "X-Y", "X [kpc]", "Y [kpc]");
-      global_hist._rz.set_title("RZ", "R-Z", "R [kpc]", "Z [kpc]");
+      global_hist._xy.set_title(uuid + "::XY", "X-Y", "X [kpc]", "Y [kpc]");
+      global_hist._rz.set_title(uuid + "::RZ", "R-Z", "R [kpc]", "Z [kpc]");
 
       // 3D histograms
       /*sprintf(name, "%s/XYVR", uuid.c_str());
