@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2019-12-26.0"
+#define VERSION_STRING "SV2019-12-27.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -1100,8 +1100,9 @@ void execute_gaia(uWS::HttpResponse *res,
   // html.append("<h1>GAIA DR2 WebQL</h1>");
 
   html.append("<div id=\"hr\" style=\"width: 800px; height: 600px\"></div>");
-  html.append("<div id=\"mg\"></div>");
-  html.append("<div id=\"xy\" style=\"width: 800px; height: 600px\"></div>");
+  html.append("<div id=\"mg\"></div><hr>");
+  html.append(
+      "<div id=\"xy\" style=\"width: 800px; height: 600px\"></div><hr>");
   html.append("<div id=\"rz\" style=\"width: 800px; height: 600px\"></div>");
 
   html.append("</div");
