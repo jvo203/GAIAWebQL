@@ -12,6 +12,7 @@
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TGaxis.h>
+#include <TThread.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid.hpp>            // uuid class
@@ -161,11 +162,16 @@ void SeedH2::export_root(std::string uuid, std::string type) {
   }
 
   filename = tmp + "/" + type + ".root";
+
+  TThread::Lock();
+
   TFile outputFile(filename.c_str(), "RECREATE");
   outputFile.SetCompressionLevel(
       ROOT::RCompressionSetting::ELevel::kDefaultZLIB);
   _hist->Write();
   outputFile.Close();
+
+  TThread::UnLock();
 }
 
 void SeedH2::save(std::string uuid, std::string type) {
