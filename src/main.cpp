@@ -128,7 +128,7 @@ using namespace nghttp2::asio_http2;
 using namespace nghttp2::asio_http2::server;
 
 http2 *http2_server;
-std::string docs_root = "htdocs2";
+std::string docs_root = "htdocs";
 std::string home_dir;
 
 void http_not_found(const response *res) {
@@ -149,6 +149,116 @@ void http_accepted(const response *res) {
 void http_internal_server_error(const response *res) {
   res->write_head(500);
   res->end("Internal Server Error");
+}
+
+void serve_file(const request *req, const response *res, std::string uri) {
+  // a safety check against directory traversal attacks
+  if (!check_path(uri))
+    return http_not_found(res);
+
+  // check if a resource exists
+  std::string path = docs_root + uri;
+
+  if (std::filesystem::exists(path)) {
+    // detect mime-types
+    header_map mime;
+
+    size_t pos = uri.find_last_of(".");
+
+    if (pos != std::string::npos) {
+      std::string ext = uri.substr(pos + 1, std::string::npos);
+
+      if (ext == "htm" || ext == "html")
+        mime.insert(std::pair<std::string, header_value>("Content-Type",
+                                                         {"text/html", false}));
+
+      if (ext == "txt")
+        mime.insert(std::pair<std::string, header_value>(
+            "Content-Type", {"text/plain", false}));
+
+      if (ext == "js")
+        mime.insert(std::pair<std::string, header_value>(
+            "Content-Type", {"application/javascript", false}));
+
+      if (ext == "ico")
+        mime.insert(std::pair<std::string, header_value>(
+            "Content-Type", {"image/x-icon", false}));
+
+      if (ext == "png")
+        mime.insert(std::pair<std::string, header_value>("Content-Type",
+                                                         {"image/png", false}));
+
+      if (ext == "gif")
+        mime.insert(std::pair<std::string, header_value>("Content-Type",
+                                                         {"image/gif", false}));
+
+      if (ext == "webp")
+        mime.insert(std::pair<std::string, header_value>(
+            "Content-Type", {"image/webp", false}));
+
+      if (ext == "jpg" || ext == "jpeg")
+        mime.insert(std::pair<std::string, header_value>(
+            "Content-Type", {"image/jpeg", false}));
+
+      if (ext == "mp4")
+        mime.insert(std::pair<std::string, header_value>("Content-Type",
+                                                         {"video/mp4", false}));
+
+      if (ext == "css")
+        mime.insert(std::pair<std::string, header_value>("Content-Type",
+                                                         {"text/css", false}));
+
+      if (ext == "pdf")
+        mime.insert(std::pair<std::string, header_value>(
+            "Content-Type", {"application/pdf", false}));
+
+      if (ext == "svg")
+        mime.insert(std::pair<std::string, header_value>(
+            "Content-Type", {"image/svg+xml", false}));
+
+      if (ext == "wasm")
+        mime.insert(std::pair<std::string, header_value>(
+            "Content-Type", {"application/wasm", false}));
+    }
+
+    // check for compression
+    header_map headers = req->header();
+
+    auto it = headers.find("accept-encoding");
+    if (it != headers.end()) {
+      auto value = it->second.value;
+      // std::cout << "Supported compression: " << value << std::endl;
+
+      // prefer brotli due to smaller file sizes
+      size_t pos = value.find("br"); // brotli or gzip
+
+      if (pos != std::string::npos) {
+        if (std::filesystem::exists(path + ".br")) {
+          path += ".br";
+          // append the compression mime
+          mime.insert(std::pair<std::string, header_value>("Content-Encoding",
+                                                           {"br", false}));
+        }
+      } else {
+        // fallback to gzip
+        size_t pos = value.find("gzip");
+
+        if (pos != std::string::npos) {
+          if (std::filesystem::exists(path + ".gz")) {
+            path += ".gz";
+            // append the compression mime
+            mime.insert(std::pair<std::string, header_value>("Content-Encoding",
+                                                             {"gzip", false}));
+          }
+        }
+      }
+    }
+
+    res->write_head(200, mime);
+    res->end(file_generator(path));
+  } else {
+    http_not_found(res);
+  }
 }
 
 #include <uWS/uWS.h>
@@ -239,9 +349,7 @@ void signalHandler(int signum) {
   std::cout << "remaining requests: " << requests.size()
             << "\tremaining results: " << results.size() << std::endl;
 
-  std::cout << "GAIAWebQL shutdown completed." << std::endl;
-
-  exit(signum);
+  http2_server->stop();
 }
 
 // resource not found
@@ -1131,9 +1239,6 @@ int main(int argc, char *argv[]) {
   // load the db healpix index file
   load_db_index("gaiadr2-table.dat");
 
-  // register signal SIGINT and signal handler
-  signal(SIGINT, signalHandler);
-
   // parse local command-line options
   if (argc > 2) {
     for (int i = 1; i < argc - 1; i++) {
@@ -1146,7 +1251,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::cout << SERVER_STRING << " (" << VERSION_STRING << ")" << std::endl;
-  std::cout << "Browser URL: http://localhost:" << server_port << std::endl;
+  std::cout << "Browser URL: https://localhost:" << server_port << std::endl;
 
   boost::system::error_code ec;
   boost::asio::ssl::context tls(boost::asio::ssl::context::sslv23);
@@ -1162,6 +1267,45 @@ int main(int argc, char *argv[]) {
 
   http2_server = new http2();
   http2_server->num_threads(no_threads);
+
+  http2_server->handle("/", [](const request &req, const response &res) {
+    boost::system::error_code ec;
+
+    auto uri = req.uri().path;
+
+    if (uri == "/") {
+      auto push = res.push(ec, "GET", "/favicon.ico");
+      serve_file(&req, push, "/favicon.ico");
+
+      push = res.push(ec, "GET", "/index.css");
+      serve_file(&req, push, "/index.css");
+
+      push = res.push(ec, "GET", "/index.js");
+      serve_file(&req, push, "/index.js");
+
+      push = res.push(ec, "GET", "/paper_texture_08.png");
+      serve_file(&req, push, "/paper_texture_08.png");
+
+      serve_file(&req, &res, "/index.html");
+    } else {
+      std::cout << uri << std::endl;
+      http_not_found(&res);
+    }
+  });
+
+  signal(SIGPIPE, SIG_IGN); // ignore SIGPIPE
+  signal(SIGINT, signalHandler);
+  signal(SIGTERM, signalHandler);
+
+  if (http2_server->listen_and_serve(ec, tls, "0.0.0.0",
+                                     std::to_string(server_port), true)) {
+    std::cerr << "error: " << ec.message() << std::endl;
+  }
+
+  http2_server->join();
+  delete http2_server;
+
+  std::cout << "GAIAWebQL shutdown completed." << std::endl;
 
   /*std::vector<std::thread *> threads(no_threads);
   std::transform(
