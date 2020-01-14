@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2019-12-27.0"
+#define VERSION_STRING "SV2020-01-14.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -121,11 +121,37 @@ struct global_search {
 };
 
 #include <omp.h>
-#include <uWS/uWS.h>
 
-typedef uWS::WebSocket<uWS::SERVER> uWS_SERVER_CONNECTION;
-std::unordered_map<std::string, uWS_SERVER_CONNECTION *> progress_list;
-std::mutex progress_mtx;
+#include <nghttp2/asio_http2_server.h>
+
+using namespace nghttp2::asio_http2;
+using namespace nghttp2::asio_http2::server;
+
+http2 *http2_server;
+std::string docs_root = "htdocs2";
+std::string home_dir;
+
+void http_not_found(const response *res) {
+  res->write_head(404);
+  res->end("Not Found");
+}
+
+void http_not_implemented(const response *res) {
+  res->write_head(501);
+  res->end("Not Implemented");
+}
+
+void http_accepted(const response *res) {
+  res->write_head(202);
+  res->end("Accepted");
+}
+
+void http_internal_server_error(const response *res) {
+  res->write_head(500);
+  res->end("Internal Server Error");
+}
+
+#include <uWS/uWS.h>
 
 int server_port = SERVER_PORT;
 
@@ -517,50 +543,6 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
                   valid_data = false;
                 }
 
-                /*double ra = std::strtod(PQgetvalue(res, i, 0), &e);
-                if (*e != '\0' || // error, we didn't consume the entire string
-                    errno != 0)   // error, overflow or underflow
-                  ra = NAN;
-
-                double dec = std::strtod(PQgetvalue(res, i, 1), &e);
-                if (*e != '\0' || // error, we didn't consume the entire string
-                    errno != 0)   // error, overflow or underflow
-                  dec = NAN;
-
-                double phot_g_mean_mag = std::strtod(PQgetvalue(res, i, 2), &e);
-                if (*e != '\0' || // error, we didn't consume the entire string
-                    errno != 0)   // error, overflow or underflow
-                  phot_g_mean_mag = NAN;
-
-                double bp_rp = std::strtod(PQgetvalue(res, i, 3), &e);
-                if (*e != '\0' || // error, we didn't consume the entire string
-                    errno != 0)   // error, overflow or underflow
-                  bp_rp = NAN;
-
-                double parallax = std::strtod(PQgetvalue(res, i, 4), &e);
-                if (*e != '\0' || // error, we didn't consume the entire string
-                    errno != 0)   // error, overflow or underflow
-                  parallax = NAN;
-
-                double pmra = std::strtod(PQgetvalue(res, i, 5), &e);
-                if (*e != '\0' || // error, we didn't consume the entire string
-                    errno != 0)   // error, overflow or underflow
-                  pmra = NAN;
-
-                double pmdec = std::strtod(PQgetvalue(res, i, 6), &e);
-                if (*e != '\0' || // error, we didn't consume the entire string
-                    errno != 0)   // error, overflow or underflow
-                  pmdec = NAN;
-
-                double radial_velocity = std::strtod(PQgetvalue(res, i, 7), &e);
-                if (*e != '\0' || // error, we didn't consume the entire string
-                    errno != 0)   // error, overflow or underflow
-                  radial_velocity = NAN;*/
-
-                /*if (!std::isnan(ra) && !std::isnan(dec) &&
-                    !std::isnan(phot_g_mean_mag) && !std::isnan(bp_rp) &&
-                    !std::isnan(parallax) && !std::isnan(pmra) &&
-                    !std::isnan(pmdec) && !std::isnan(radial_velocity))*/
                 if (valid_data) {
                   double M_G =
                       phot_g_mean_mag + 5.0 + 5.0 * log10(parallax / 1000.0);
@@ -697,24 +679,6 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
     entry->completed.push_back(hpx);
     size_t len = entry->completed.size();
     abort_search = entry->abort;
-
-    try {
-      std::lock_guard<std::mutex> lock(progress_mtx);
-      auto ws = progress_list.at(uuid);
-
-      // send completed via websockets
-      std::ostringstream json;
-      json << "{ \"type\" : \"progress\",  \"completed\" : " << len
-           << ", \"elapsed\" : " << (std::time(nullptr) - entry->timestamp)
-           << " }";
-      //((steady_clock::now() - entry->timestamp).count()) *
-      // steady_clock::period::num /
-      // static_cast<double>(steady_clock::period::den)
-      ws->send(json.str().c_str(), json.tellp(), uWS::OpCode::TEXT);
-    } catch (const std::out_of_range &err) {
-      printf("no websocket connection found for a job request %s\n",
-             uuid.c_str());
-    }
   } catch (const std::out_of_range &err) {
     printf("no entry found for a job request %s\n", uuid.c_str());
     abort_search = true;
@@ -1184,8 +1148,22 @@ int main(int argc, char *argv[]) {
   std::cout << SERVER_STRING << " (" << VERSION_STRING << ")" << std::endl;
   std::cout << "Browser URL: http://localhost:" << server_port << std::endl;
 
-  int no_threads = MIN(MAX(std::thread::hardware_concurrency() / 2, 1), 4);
-  std::vector<std::thread *> threads(no_threads);
+  boost::system::error_code ec;
+  boost::asio::ssl::context tls(boost::asio::ssl::context::sslv23);
+
+  tls.use_private_key_file("ssl/server.key", boost::asio::ssl::context::pem);
+  tls.use_certificate_chain_file("ssl/server.crt");
+
+  if (configure_tls_context_easy(ec, tls)) {
+    std::cerr << "error: " << ec.message() << std::endl;
+  }
+
+  int no_threads = MAX(std::thread::hardware_concurrency() / 2, 1);
+
+  http2_server = new http2();
+  http2_server->num_threads(no_threads);
+
+  /*std::vector<std::thread *> threads(no_threads);
   std::transform(
       threads.begin(), threads.end(), threads.begin(), [](std::thread *t) {
         return new std::thread([]() {
@@ -1510,5 +1488,5 @@ int main(int argc, char *argv[]) {
       });
 
   std::for_each(threads.begin(), threads.end(),
-                [](std::thread *t) { t->join(); });
+                [](std::thread *t) { t->join(); });*/
 }
