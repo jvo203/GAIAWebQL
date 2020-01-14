@@ -1289,7 +1289,21 @@ int main(int argc, char *argv[]) {
       serve_file(&req, &res, "/index.html");
     } else {
       std::cout << uri << std::endl;
-      http_not_found(&res);
+
+      // FITSWebQL entry
+      if (uri.find("FITSWebQL.html") != std::string::npos) {
+        auto push = res.push(ec, "GET", "/favicon.ico");
+        serve_file(&req, push, "/favicon.ico");        
+
+        push = res.push(ec, "GET", "/gaiawebql/gaiawebql.js");
+        serve_file(&req, push, "/gaiawebql/gaiawebql.js");
+
+        auto uri = req.uri();
+        auto query = percent_decode(uri.raw_query);      
+      };
+
+      // by default try to serve a file
+      serve_file(&req, &res, uri);
     }
   });
 
