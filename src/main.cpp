@@ -815,7 +815,7 @@ void execute_gaia(const response *res,
   }
 
   // find out if the uuid has already been processed
-  std::string dir = "DATA/" + uuid;
+  std::string dir = docs_root + "/gaiawebql/DATA/" + uuid;
   bool exists = false;
 
   if (std::filesystem::exists(dir))
@@ -994,8 +994,8 @@ void execute_gaia(const response *res,
         global_hist._rz.export_root(uuid, "rz");
 
         // rename the temporary dir to just "DATA/uuid"
-        std::string tmp = "DATA/" + uuid + ".tmp";
-        std::string dir = "DATA/" + uuid;
+        std::string tmp = docs_root + "/gaiawebql/DATA/" + uuid + ".tmp";
+        std::string dir = docs_root + "/gaiawebql/DATA/" + uuid;
         rename(tmp.c_str(), dir.c_str());
 
         // the H-R diagram
