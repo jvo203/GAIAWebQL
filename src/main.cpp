@@ -216,9 +216,9 @@ void serve_file(const request *req, const response *res, std::string uri) {
         mime.insert(std::pair<std::string, header_value>(
             "Content-Type", {"image/svg+xml", false}));
 
-      if (ext == "wasm")
+      if (ext == "root")
         mime.insert(std::pair<std::string, header_value>(
-            "Content-Type", {"application/wasm", false}));
+            "Content-Type", {"application/octet-stream", false}));
     }
 
     // check for compression
@@ -798,7 +798,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
   return abort_search;
 }
 
-void execute_gaia(uWS::HttpResponse *res,
+void execute_gaia(const response *res,
                   std::shared_ptr<struct search_criteria> search,
                   std::string where, std::string uuid) {
 
@@ -808,13 +808,8 @@ void execute_gaia(uWS::HttpResponse *res,
     if (requests.find(uuid) != requests.end()) {
       // respond with the dataset id
       std::string html = uuid + " is being processed. Please check later.";
-      size_t size = html.length();
-      write_status(res, 202, "Accepted");
-      write_content_length(res, size);
-      write_content_type(res, "text/plain");
-      res->write("\r\n", 2);
-      res->write((const char *)html.data(), size);
-      res->write("\r\n\r\n", 4);
+      res->write_head(202);
+      res->end(html);
       return;
     }
   }
@@ -1100,13 +1095,12 @@ void execute_gaia(uWS::HttpResponse *res,
 
     // respond with the dataset id
     std::string html = uuid;
-    size_t size = html.length();
-    write_status(res, 200, "OK");
-    write_content_length(res, size);
-    write_content_type(res, "text/plain");
-    res->write("\r\n", 2);
-    res->write((const char *)html.data(), size);
-    res->write("\r\n\r\n", 4);
+
+    header_map mime;
+    mime.insert(std::pair<std::string, header_value>("Content-Type",
+                                                     {"text/plain", false}));
+    res->write_head(200, mime);
+    res->end(html);
     return;
   }
 
@@ -1180,13 +1174,11 @@ void execute_gaia(uWS::HttpResponse *res,
   html.append("</div");
   html.append("</body></html>");
 
-  size_t size = html.length();
-  write_status(res, 200, "OK");
-  write_content_length(res, size);
-  write_content_type(res, "text/html");
-  res->write("\r\n", 2);
-  res->write((const char *)html.data(), size);
-  res->write("\r\n\r\n", 4);
+  header_map mime;
+  mime.insert(std::pair<std::string, header_value>("Content-Type",
+                                                   {"text/html", false}));
+  res->write_head(200, mime);
+  res->end(html);
 }
 
 char *base64(const unsigned char *input, int length) {
@@ -1290,16 +1282,232 @@ int main(int argc, char *argv[]) {
     } else {
       std::cout << uri << std::endl;
 
-      // FITSWebQL entry
-      if (uri.find("FITSWebQL.html") != std::string::npos) {
+      // GAIAWebQL entry
+      if (uri.find("GAIAWebQL.html") != std::string::npos) {
         auto push = res.push(ec, "GET", "/favicon.ico");
-        serve_file(&req, push, "/favicon.ico");        
+        serve_file(&req, push, "/favicon.ico");
 
         push = res.push(ec, "GET", "/gaiawebql/gaiawebql.js");
         serve_file(&req, push, "/gaiawebql/gaiawebql.js");
 
         auto uri = req.uri();
-        auto query = percent_decode(uri.raw_query);      
+        auto query = percent_decode(uri.raw_query);
+        std::cout << "query: (" << query << ")" << std::endl;
+
+        std::string where;
+        auto search = std::make_shared<struct search_criteria>();
+        bool valid_params = false;
+
+        std::vector<std::string> params;
+        boost::split(params, query, [](char c) { return c == '&'; });
+
+        for (auto const &s : params) {
+          // find '='
+          size_t pos = s.find("=");
+
+          if (pos != std::string::npos) {
+            std::string key = s.substr(0, pos);
+            std::string value = s.substr(pos + 1, std::string::npos);
+
+            if (key == "xmin") {
+              char *e;
+              errno = 0;
+
+              search->X_min = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->X_min = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "xmax") {
+              char *e;
+              errno = 0;
+
+              search->X_max = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->X_max = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "ymin") {
+              char *e;
+              errno = 0;
+
+              search->Y_min = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->Y_min = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "ymax") {
+              char *e;
+              errno = 0;
+
+              search->Y_max = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->Y_max = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "zmin") {
+              char *e;
+              errno = 0;
+
+              search->Z_min = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->Z_min = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "zmax") {
+              char *e;
+              errno = 0;
+
+              search->Z_max = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->Z_max = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "rmin") {
+              char *e;
+              errno = 0;
+
+              search->R_min = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->R_min = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "rmax") {
+              char *e;
+              errno = 0;
+
+              search->R_max = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->R_max = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "phimin") {
+              char *e;
+              errno = 0;
+
+              search->Phi_min = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->Phi_min = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "phimax") {
+              char *e;
+              errno = 0;
+
+              search->Phi_max = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->Phi_max = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "mgmin") {
+              char *e;
+              errno = 0;
+
+              search->M_G_min = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->M_G_min = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "mgmax") {
+              char *e;
+              errno = 0;
+
+              search->M_G_max = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->M_G_max = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "parallax_over_error") {
+              char *e;
+              errno = 0;
+
+              search->parallax_error_min = std::strtod(value.c_str(), &e);
+              if (*e != '\0' || // error, we didn't consume the entire
+                                // string
+                  errno != 0)   // error, overflow or underflow
+                search->parallax_error_min = NAN;
+              else
+                valid_params = true;
+            }
+
+            if (key == "where") {
+              CURL *curl = curl_easy_init();
+
+              char *str =
+                  curl_easy_unescape(curl, value.c_str(), value.length(), NULL);
+              where = std::string(str);
+              curl_free(str);
+
+              curl_easy_cleanup(curl);
+            }
+          }
+        }
+
+        if (where != "")
+          std::cout << " where " << where;
+        std::cout << std::endl;
+
+        if (valid_params) {
+          print_search_criteria(search);
+
+          std::size_t id = std::hash<std::string>{}(query);
+
+          std::stringstream sstream;
+          sstream << std::hex << id;
+          std::string uuid = sstream.str();
+
+          return execute_gaia(&res, search, where, uuid);
+        } else {
+          return http_not_found(&res);
+        }
       };
 
       // by default try to serve a file
