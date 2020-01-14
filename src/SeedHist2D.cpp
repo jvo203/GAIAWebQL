@@ -145,13 +145,13 @@ void SeedH2::ReverseYData(TH2 *h) {
   h->ComputeIntegral();
 }
 
-void SeedH2::export_root(std::string uuid, std::string type) {
-  std::string filename = "DATA/" + uuid + "/" + type + ".root";
+void SeedH2::export_root(std::string uuid, std::string docs_root, std::string type) {
+  std::string filename = docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".root";
 
   std::cout << "saving " << title << " into " << filename << std::endl;
 
   // mkdir DATA/<uuid>.tmp
-  std::string tmp = "DATA/" + uuid + ".tmp";
+  std::string tmp = docs_root + "/gaiawebql/DATA/" + uuid + ".tmp";
 
   if (mkdir(tmp.c_str(), 0777) != 0) {
     // return only in case of errors other than "directory already exists"
@@ -174,8 +174,8 @@ void SeedH2::export_root(std::string uuid, std::string type) {
   TThread::UnLock();
 }
 
-void SeedH2::save(std::string uuid, std::string type) {
-  std::string filename = "DATA/" + uuid + "/" + type + ".json";
+void SeedH2::save(std::string uuid, std::string docs_root, std::string type) {
+  std::string filename = docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".json";
 
   std::cout << "saving " << title << " into " << filename << std::endl;
 

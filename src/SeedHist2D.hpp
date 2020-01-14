@@ -26,8 +26,8 @@ public:
   };
   void update(float _x, float _y);
   void flush();
-  void save(std::string uuid, std::string type);
-  void export_root(std::string uuid, std::string type);
+  void save(std::string uuid, std::string docs_root, std::string type);
+  void export_root(std::string uuid, std::string docs_root, std::string type);
 
 private:
   void ReverseYAxis(TH1 *h);
