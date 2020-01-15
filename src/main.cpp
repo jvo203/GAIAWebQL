@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2020-01-14.0"
+#define VERSION_STRING "SV2020-01-15.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -633,7 +633,6 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
     auto entry = requests.at(uuid);
     std::lock_guard<std::mutex> lock(entry->completed_mtx);
     entry->completed.push_back(hpx);
-    size_t len = entry->completed.size();
     abort_search = entry->abort;
   } catch (const std::out_of_range &err) {
     printf("no entry found for a job request %s\n", uuid.c_str());
@@ -650,26 +649,30 @@ void execute_gaia(const response *res,
                   std::shared_ptr<struct search_criteria> search,
                   std::string where, std::string uuid) {
 
+  bool exists = false;
+  bool underway = false;
+
   // check if processing a request is already under way
   {
     std::lock_guard<std::mutex> req_lock(requests_mtx);
     if (requests.find(uuid) != requests.end()) {
+      underway = true;
+
       // respond with the dataset id
-      std::string html = uuid + " is being processed. Please check later.";
+      /*std::string html = uuid + " is being processed. Please check later.";
       res->write_head(202);
       res->end(html);
-      return;
+      return;*/
     }
   }
 
   // find out if the uuid has already been processed
   std::string dir = docs_root + "/gaiawebql/DATA/" + uuid;
-  bool exists = false;
 
   if (std::filesystem::exists(dir))
     exists = true;
 
-  if (!exists) {
+  if (!exists && !underway) {
     {
       std::lock_guard<std::mutex> req_lock(requests_mtx);
       requests.insert(
@@ -942,14 +945,14 @@ void execute_gaia(const response *res,
     }).detach();
 
     // respond with the dataset id
-    std::string html = uuid;
+    /*std::string html = uuid;
 
     header_map mime;
     mime.insert(std::pair<std::string, header_value>("Content-Type",
                                                      {"text/plain", false}));
     res->write_head(200, mime);
     res->end(html);
-    return;
+    return;*/
   }
 
   // the result-set already exists, prepare a full response
@@ -989,10 +992,9 @@ void execute_gaia(const response *res,
               "JSRootCore.min.js?more2d&io&onload=main\"></script>");
 
   // GAIAWebQL main JavaScript + CSS
-  html.append("<script src=\"gaiawebql.js?" VERSION_STRING
-              "\" defer></script>\n");
-  // html.append("<link rel=\"stylesheet\" href=\"gaiawebql.css?" VERSION_STRING
-  // "\"/>\n");
+  html.append("<script src=\"gaiawebql.js?" VERSION_STRING "\"></script>\n");
+  html.append("<link rel=\"stylesheet\" href=\"gaiawebql.css?" VERSION_STRING
+              "\"/>\n");
 
   // HTML content
   html.append("<title>GAIA DR2 WebQL</title></head><body>\n");
@@ -1012,6 +1014,22 @@ void execute_gaia(const response *res,
               ">\n");
 
   // html.append("<h1>GAIA DR2 WebQL</h1>");
+  if (!exists) {
+    html.append(
+        "<h3 id=\"processing\">processing request; #HEALPix search pixels: " +
+        std::to_string(db_index.size()) + "</h3>");
+    html.append("<h3 id="
+                "completed"
+                "></h3>");
+    html.append("<div class=\"progress\">");
+    html.append(
+        "<div id=\"progress-bar\" class=\"progress-bar progress-bar-info "
+        "progress-bar-striped\" role=\"progressbar\" aria-valuenow=0 "
+        "aria-valuemin=0 aria-valuemax=" +
+        std::to_string(db_index.size()) +
+        " style=\"width:0%\">0/0</div></div>");
+    html.append("</div");
+  }
 
   html.append("<div id=\"hr\" style=\"width: 800px; height: 600px\"></div>");
   html.append("<div id=\"mg\"></div><hr>");
@@ -1019,7 +1037,14 @@ void execute_gaia(const response *res,
       "<div id=\"xy\" style=\"width: 800px; height: 600px\"></div><hr>");
   html.append("<div id=\"rz\" style=\"width: 800px; height: 600px\"></div>");
 
-  html.append("</div");
+  html.append("</div>");
+
+  if (!exists) {
+    html.append("<script>poll_progress('" + uuid + "');</script>");
+    // html.append("<script>check_progress();</script>");
+    // html.append("<script>console.log('this is a test');</script>");
+  }
+
   html.append("</body></html>");
 
   header_map mime;
@@ -1130,12 +1155,55 @@ int main(int argc, char *argv[]) {
     } else {
       std::cout << uri << std::endl;
 
+      // progress
+      if (uri.find("progress/") != std::string::npos) {
+        size_t pos = uri.find_last_of("/");
+
+        if (pos != std::string::npos) {
+          std::string uuid = uri.substr(pos + 1, std::string::npos);
+
+          // process the response
+          std::cout << "progress(" << uuid << ")" << std::endl;
+
+          try {
+            auto entry = requests.at(uuid);
+            std::lock_guard<std::mutex> lock(entry->completed_mtx);
+            // std::shared_lock<std::shared_mutex> lock(fits->progress_mtx);
+
+            size_t len = entry->completed.size();
+
+            // send a progress notification
+            std::ostringstream json;
+            json << "{ \"type\" : \"progress\",  \"completed\" : " << len
+                 << ", \"total\" : " << db_index.size() << ", \"elapsed\" : "
+                 << (std::time(nullptr) - entry->timestamp) << " }";
+
+            header_map mime;
+            mime.insert(std::pair<std::string, header_value>(
+                "Content-Type", {"application/json", false}));
+            res.write_head(200, mime);
+            res.end(json.str());
+            return;
+          } catch (const std::out_of_range &err) {
+            printf("no entry found for a job request %s\n", uuid.c_str());
+            return http_not_found(&res);
+          }
+        } else
+          return http_not_found(&res);
+      }
+
       // GAIAWebQL entry
       if (uri.find("GAIAWebQL.html") != std::string::npos) {
         auto push = res.push(ec, "GET", "/favicon.ico");
         serve_file(&req, push, "/favicon.ico");
 
-        push = res.push(ec, "GET", "/gaiawebql/gaiawebql.js");
+        /*push = res.push(ec, "GET", "/gaiawebql/gaiawebql.js");
+        serve_file(&req, push, "/gaiawebql/gaiawebql.js");*/
+
+        push = res.push(ec, "GET", "/gaiawebql/gaiawebql.css?" VERSION_STRING);
+        serve_file(&req, push, "/gaiawebql/gaiawebql.css");
+
+        push = res.push(ec, "GET", "/gaiawebql/gaiawebql.js?" VERSION_STRING);
         serve_file(&req, push, "/gaiawebql/gaiawebql.js");
 
         auto uri = req.uri();
