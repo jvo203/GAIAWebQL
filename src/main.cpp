@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2020-01-15.0"
+#define VERSION_STRING "SV2020-01-16.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -989,7 +989,7 @@ void execute_gaia(const response *res,
   // CERN ROOT JS
   html.append("<script type=\"text/javascript\" "
               "src=\"https://root.cern/js/latest/scripts/"
-              "JSRootCore.min.js?more2d&io&onload=main\"></script>");
+              "JSRootCore.min.js?more2d&io&onload=fetch_plots\"></script>");
 
   // GAIAWebQL main JavaScript + CSS
   html.append("<script src=\"gaiawebql.js?" VERSION_STRING "\"></script>\n");
@@ -1039,8 +1039,10 @@ void execute_gaia(const response *res,
 
   html.append("</div>");
 
+  html.append("<script>main();</script>");
+
   if (!exists) {
-    html.append("<script>poll_progress('" + uuid + "');</script>");
+    html.append("<script>poll_progress();</script>");
     // html.append("<script>check_progress();</script>");
     // html.append("<script>console.log('this is a test');</script>");
   }
