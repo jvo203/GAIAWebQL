@@ -131,6 +131,11 @@ http2 *http2_server;
 std::string docs_root = "htdocs";
 std::string home_dir;
 
+void http_ok(const response *res) {
+  res->write_head(200);
+  res->end("OK");
+}
+
 void http_not_found(const response *res) {
   res->write_head(404);
   res->end("Not Found");
@@ -987,9 +992,17 @@ void execute_gaia(const response *res,
               "bootstrap.min.js\"></script>\n");
 
   // CERN ROOT JS
-  html.append("<script type=\"text/javascript\" "
-              "src=\"https://root.cern/js/latest/scripts/"
-              "JSRootCore.min.js?more2d&io&onload=fetch_plots\"></script>");
+  std::string url =
+      "https://root.cern/js/latest/scripts/JSRootCore.min.js?more2d&io&onload=";
+
+  if (!exists)
+    html.append("<script type=\"text/javascript\" "
+                "src=\"" +
+                url + "onloaded\"></script>");
+  else
+    html.append("<script type=\"text/javascript\" "
+                "src=\"" +
+                url + "fetch_plots\"></script>");
 
   // GAIAWebQL main JavaScript + CSS
   html.append("<script src=\"gaiawebql.js?" VERSION_STRING "\"></script>\n");
@@ -1028,15 +1041,13 @@ void execute_gaia(const response *res,
         "aria-valuemin=0 aria-valuemax=" +
         std::to_string(db_index.size()) +
         " style=\"width:0%\">0/0</div></div>");
-    html.append("</div");
+    html.append("</div>");
   }
 
   html.append("<div id=\"hr\" style=\"width: 800px; height: 600px\"></div>");
-  html.append("<div id=\"mg\"></div><hr>");
-  html.append(
-      "<div id=\"xy\" style=\"width: 800px; height: 600px\"></div><hr>");
+  html.append("<div id=\"mg\"></div>");
+  html.append("<div id=\"xy\" style=\"width: 800px; height: 600px\"></div>");
   html.append("<div id=\"rz\" style=\"width: 800px; height: 600px\"></div>");
-
   html.append("</div>");
 
   html.append("<script>main();</script>");
@@ -1156,6 +1167,28 @@ int main(int argc, char *argv[]) {
       serve_file(&req, &res, "/index.html");
     } else {
       std::cout << uri << std::endl;
+
+      // status
+      if (uri.find("status/") != std::string::npos) {
+        size_t pos = uri.find_last_of("/");
+
+        if (pos != std::string::npos) {
+          std::string uuid = uri.substr(pos + 1, std::string::npos);
+
+          // process the response
+          std::cout << "status(" << uuid << ")" << std::endl;
+
+          // find out if the uuid has already been processed
+          std::string dir = docs_root + "/gaiawebql/DATA/" + uuid;
+
+          if (std::filesystem::exists(dir))
+            return http_ok(&res);
+          else
+            return http_accepted(&res);
+
+        } else
+          return http_not_found(&res);
+      }
 
       // progress
       if (uri.find("progress/") != std::string::npos) {

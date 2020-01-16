@@ -1,12 +1,10 @@
 function get_js_version() {
-    return "JS2020-01-16.0";
+    return "JS2020-01-16.1";
 }
 
 function poll_progress() {
     var xmlhttp = new XMLHttpRequest();
     var url = 'progress/' + encodeURIComponent(uuid);
-
-    console.log("polling progress", url);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -27,6 +25,28 @@ function poll_progress() {
 
     xmlhttp.open("POST", url, true);
     xmlhttp.responseType = 'json';
+    xmlhttp.timeout = 0;
+    xmlhttp.send();
+}
+
+function poll_status() {
+    var xmlhttp = new XMLHttpRequest();
+    var url = 'status/' + encodeURIComponent(uuid);
+
+    xmlhttp.onreadystatechange = function () {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            fetch_plots();
+        }
+
+        // repeat the poll until success
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 202) {
+            setTimeout(function () {
+                poll_status();
+            }, 250);
+        }
+    }
+
+    xmlhttp.open("POST", url, true);
     xmlhttp.timeout = 0;
     xmlhttp.send();
 }
@@ -62,13 +82,24 @@ function process_progress_event(data) {
 
             //remove the progress bar
             $(".progress").remove();
+
+            if (loaded == true) {
+                // really we should be waiting until onloaded has executed
+                // await/promise?
+                poll_status();
+            }
         }
     }
+}
+
+function onloaded() {
+    loaded = true;
 }
 
 function fetch_plots() {
     console.log("fetching plots for " + uuid);
 
+    $('#completed').remove();
     JSROOT.gStyle.fOptLogz = 1;
 
     new JSROOT.TFile("DATA/" + uuid + "/hr.root", function (file) {
