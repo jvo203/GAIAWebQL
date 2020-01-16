@@ -1,10 +1,10 @@
 function get_js_version() {
-    return "JS2020-01-15.0";
+    return "JS2020-01-16.0";
 }
 
-function poll_progress(id) {
+function poll_progress() {
     var xmlhttp = new XMLHttpRequest();
-    var url = 'progress/' + encodeURIComponent(id);
+    var url = 'progress/' + encodeURIComponent(uuid);
 
     console.log("polling progress", url);
 
@@ -17,7 +17,7 @@ function poll_progress(id) {
 
                 if (data.total == 0 || data.completed != data.total)
                     setTimeout(function () {
-                        poll_progress(id);
+                        poll_progress();
                     }, 250);
             } catch (e) {
                 console.log(e);
@@ -66,13 +66,10 @@ function process_progress_event(data) {
     }
 }
 
-function main() {
-    JSROOT.gStyle.fOptLogz = 1;
-    session_data = document.getElementById('session-data');
-    uuid = session_data.getAttribute('data-uuid');
-    where = session_data.getAttribute('data-where');
-
+function fetch_plots() {
     console.log("fetching plots for " + uuid);
+
+    JSROOT.gStyle.fOptLogz = 1;
 
     new JSROOT.TFile("DATA/" + uuid + "/hr.root", function (file) {
         file.ReadObject(uuid + "::HR", function (obj) {
@@ -99,4 +96,10 @@ function main() {
             JSROOT.draw("rz", obj, "colz");
         });
     });
+}
+
+function main() {
+    session_data = document.getElementById('session-data');
+    uuid = session_data.getAttribute('data-uuid');
+    where = session_data.getAttribute('data-where');
 }
