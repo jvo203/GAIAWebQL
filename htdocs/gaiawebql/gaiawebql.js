@@ -1,5 +1,5 @@
 function get_js_version() {
-    return "JS2020-01-16.1";
+    return "JS2020-01-16.2";
 }
 
 function poll_progress() {
@@ -104,7 +104,11 @@ function fetch_plots() {
 
     new JSROOT.TFile("DATA/" + uuid + "/hr.root", function (file) {
         file.ReadObject(uuid + "::HR", function (obj) {
-            JSROOT.draw("hr", obj, "colz");
+            // draw only axes and revert the Y axis
+            JSROOT.draw("hr", obj, "AXIS_RY");
+            // overlay the actual histogram on top of the axes
+            JSROOT.draw("hr", obj, "COL");
+
             var html = '<p>M<SUB>G</SUB> = phot_g_mean_mag + 5 + 5 log<SUB>10</SUB>(parallax / 1000)';
 
             if (where != "")
