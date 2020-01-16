@@ -1,4 +1,8 @@
+body {
+    margin: 2.5%;
+    padding: 0;
+}
+
 .progress-bar {
     transition-duration: 0.5s;
 }
-
