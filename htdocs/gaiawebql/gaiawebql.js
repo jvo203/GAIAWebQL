@@ -107,7 +107,7 @@ function fetch_plots() {
             // draw only axes and revert the Y axis
             JSROOT.draw("hr", obj, "AXIS_RY");
             // overlay the actual histogram on top of the axes
-            JSROOT.draw("hr", obj, "COL");
+            JSROOT.draw("hr", obj, "COLZ");
 
             var html = '<p>M<SUB>G</SUB> = phot_g_mean_mag + 5 + 5 log<SUB>10</SUB>(parallax / 1000)';
 
