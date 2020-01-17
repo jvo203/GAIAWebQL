@@ -93,6 +93,61 @@ struct search_criteria {
   }
 };
 
+std::string make_uuid(std::shared_ptr<struct search_criteria> search,
+                      std::string where) {
+  std::ostringstream uri;
+
+  if (!std::isnan(search->X_min))
+    uri << search->X_min;
+
+  if (!std::isnan(search->X_max))
+    uri << search->X_max;
+
+  if (!std::isnan(search->Y_min))
+    uri << search->Y_min;
+
+  if (!std::isnan(search->Y_max))
+    uri << search->Y_max;
+
+  if (!std::isnan(search->Z_min))
+    uri << search->Z_min;
+
+  if (!std::isnan(search->Z_max))
+    uri << search->Z_max;
+
+  if (!std::isnan(search->R_min))
+    uri << search->R_min;
+
+  if (!std::isnan(search->R_max))
+    uri << search->R_max;
+
+  if (!std::isnan(search->Phi_min))
+    uri << search->Phi_min;
+
+  if (!std::isnan(search->Phi_max))
+    uri << search->Phi_max;
+
+  if (!std::isnan(search->M_G_min))
+    uri << search->M_G_min;
+
+  if (!std::isnan(search->M_G_max))
+    uri << search->M_G_max;
+
+  if (!std::isnan(search->parallax_error_min))
+    uri << search->parallax_error_min;
+
+  if (where != "")
+    uri << where;
+
+  std::size_t id = std::hash<std::string>{}(uri.str());
+
+  std::stringstream sstream;
+  sstream << std::hex << id;
+  std::string uuid = sstream.str();
+
+  return uuid;
+}
+
 void print_search_criteria(std::shared_ptr<struct search_criteria> search) {
   printf("X: [%f - %f]\n", search->X_min, search->X_max);
   printf("Y: [%f - %f]\n", search->Y_min, search->Y_max);
@@ -1495,11 +1550,7 @@ int main(int argc, char *argv[]) {
         if (valid_params) {
           print_search_criteria(search);
 
-          std::size_t id = std::hash<std::string>{}(query);
-
-          std::stringstream sstream;
-          sstream << std::hex << id;
-          std::string uuid = sstream.str();
+          std::string uuid = make_uuid(search, where);
 
           return execute_gaia(&res, search, where, uuid, offline);
         } else {
