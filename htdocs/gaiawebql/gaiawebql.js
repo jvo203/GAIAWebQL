@@ -1,5 +1,5 @@
 function get_js_version() {
-    return "JS2020-01-16.2";
+    return "JS2020-01-17.0";
 }
 
 function poll_progress() {
@@ -86,7 +86,11 @@ function process_progress_event(data) {
             if (loaded == true) {
                 // really we should be waiting until onloaded has executed
                 // await/promise?
-                poll_status();
+
+                if (data.exists)
+                    fetch_plots();
+                else
+                    poll_status();
             }
         }
     }

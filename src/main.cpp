@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2020-01-16.0"
+#define VERSION_STRING "SV2020-01-17.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -382,6 +382,15 @@ void load_db_index(std::string filename) {
             << " entries." << std::endl;
 }
 
+bool dataset_exists(std::string uuid) {
+  std::string dir = docs_root + "/gaiawebql/DATA/" + uuid;
+
+  if (std::filesystem::exists(dir))
+    return true;
+  else
+    return false;
+}
+
 bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string uuid,
                     std::shared_ptr<struct search_criteria> search, std::string where,
                     std::shared_ptr<OmniCoords> coords,
@@ -654,8 +663,10 @@ void execute_gaia(const response *res,
                   std::shared_ptr<struct search_criteria> search,
                   std::string where, std::string uuid) {
 
-  bool exists = false;
   bool underway = false;
+
+  // find out if the uuid has already been processed
+  bool exists = dataset_exists(uuid);
 
   // check if processing a request is already under way
   {
@@ -670,12 +681,6 @@ void execute_gaia(const response *res,
       return;*/
     }
   }
-
-  // find out if the uuid has already been processed
-  std::string dir = docs_root + "/gaiawebql/DATA/" + uuid;
-
-  if (std::filesystem::exists(dir))
-    exists = true;
 
   if (!exists && !underway) {
     {
@@ -932,7 +937,9 @@ void execute_gaia(const response *res,
           global_hist.RZVZ->GetZaxis()->SetTitle("V_{Z} [km/s]");
           SetView3D(global_hist.RZVZ);*/
         }
-      } else {
+      }
+
+      {
         // purge the results
         std::lock_guard<std::mutex> res_lock(results_mtx);
         results.erase(uuid);
@@ -945,8 +952,11 @@ void execute_gaia(const response *res,
       delete global_hist.RZVPhi;
       delete global_hist.RZVZ;*/
 
-      std::lock_guard<std::mutex> lock(requests_mtx);
-      requests.erase(uuid);
+      {
+        // purge the requests
+        std::lock_guard<std::mutex> lock(requests_mtx);
+        requests.erase(uuid);
+      }
     }).detach();
 
     // respond with the dataset id
@@ -1211,7 +1221,8 @@ int main(int argc, char *argv[]) {
             // send a progress notification
             std::ostringstream json;
             json << "{ \"type\" : \"progress\",  \"completed\" : " << len
-                 << ", \"total\" : " << db_index.size() << ", \"elapsed\" : "
+                 << ", \"total\" : " << db_index.size()
+                 << ", \"exists\" : false, \"elapsed\" : "
                  << (std::time(nullptr) - entry->timestamp) << " }";
 
             header_map mime;
@@ -1222,7 +1233,23 @@ int main(int argc, char *argv[]) {
             return;
           } catch (const std::out_of_range &err) {
             printf("no entry found for a job request %s\n", uuid.c_str());
-            return http_not_found(&res);
+
+            // find out if the uuid has already been processed
+            if (dataset_exists(uuid)) {
+              // send a progress notification
+              std::ostringstream json;
+              json << "{ \"type\" : \"progress\",  \"completed\" : "
+                   << db_index.size() << ", \"total\" : " << db_index.size()
+                   << ", \"exists\" : true, \"elapsed\" : 0 }";
+
+              header_map mime;
+              mime.insert(std::pair<std::string, header_value>(
+                  "Content-Type", {"application/json", false}));
+              res.write_head(200, mime);
+              res.end(json.str());
+              return;
+            } else
+              return http_not_found(&res);
           }
         } else
           return http_not_found(&res);
