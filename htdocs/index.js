@@ -89,6 +89,9 @@ function view_gaia() {
     if (where != "")
         params += "&where=" + encodeURIComponent(where);
 
+    if (document.getElementById("offline").checked)
+        params += "&offline";
+
     if (params != "") {
         params = params.substr(1);
         var url = "/gaiawebql/GAIAWebQL.html?" + params;

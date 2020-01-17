@@ -661,7 +661,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
 
 void execute_gaia(const response *res,
                   std::shared_ptr<struct search_criteria> search,
-                  std::string where, std::string uuid) {
+                  std::string where, std::string uuid, bool offline) {
 
   bool underway = false;
 
@@ -675,6 +675,17 @@ void execute_gaia(const response *res,
       underway = true;
 
       // respond with the dataset id
+      if (offline) {
+        std::string html = uuid;
+
+        header_map mime;
+        mime.insert(std::pair<std::string, header_value>(
+            "Content-Type", {"text/plain", false}));
+        res->write_head(200, mime);
+        res->end(html);
+        return;
+      }
+
       /*std::string html = uuid + " is being processed. Please check later.";
       res->write_head(202);
       res->end(html);
@@ -958,16 +969,18 @@ void execute_gaia(const response *res,
         requests.erase(uuid);
       }
     }).detach();
+  }
 
-    // respond with the dataset id
-    /*std::string html = uuid;
+  // respond with the dataset id
+  if (offline) {
+    std::string html = uuid;
 
     header_map mime;
     mime.insert(std::pair<std::string, header_value>("Content-Type",
                                                      {"text/plain", false}));
     res->write_head(200, mime);
     res->end(html);
-    return;*/
+    return;
   }
 
   // the result-set already exists, prepare a full response
@@ -1273,6 +1286,7 @@ int main(int argc, char *argv[]) {
         auto query = percent_decode(uri.raw_query);
         std::cout << "query: (" << query << ")" << std::endl;
 
+        bool offline = false;
         std::string where;
         auto search = std::make_shared<struct search_criteria>();
         bool valid_params = false;
@@ -1281,6 +1295,10 @@ int main(int argc, char *argv[]) {
         boost::split(params, query, [](char c) { return c == '&'; });
 
         for (auto const &s : params) {
+          // check the value-less 'offline' flag
+          if (s == "offline")
+            offline = true;
+
           // find '='
           size_t pos = s.find("=");
 
@@ -1483,7 +1501,7 @@ int main(int argc, char *argv[]) {
           sstream << std::hex << id;
           std::string uuid = sstream.str();
 
-          return execute_gaia(&res, search, where, uuid);
+          return execute_gaia(&res, search, where, uuid, offline);
         } else {
           return http_not_found(&res);
         }
