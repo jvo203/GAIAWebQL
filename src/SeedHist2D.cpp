@@ -2,6 +2,10 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+
 #include <fstream>
 #include <iostream>
 #include <stdio.h>
@@ -145,8 +149,10 @@ void SeedH2::ReverseYData(TH2 *h) {
   h->ComputeIntegral();
 }
 
-void SeedH2::export_root(std::string uuid, std::string docs_root, std::string type) {
-  std::string filename = docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".root";
+void SeedH2::export_root(std::string uuid, std::string docs_root,
+                         std::string type) {
+  std::string filename =
+      docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".root";
 
   std::cout << "saving " << title << " into " << filename << std::endl;
 
@@ -175,11 +181,12 @@ void SeedH2::export_root(std::string uuid, std::string docs_root, std::string ty
 }
 
 void SeedH2::save(std::string uuid, std::string docs_root, std::string type) {
-  std::string filename = docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".json";
+  std::string filename =
+      docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".json";
 
   std::cout << "saving " << title << " into " << filename << std::endl;
 
-  // mkdir DATA/<uuid>.tmp  
+  // mkdir DATA/<uuid>.tmp
   std::string tmp = docs_root + "/gaiawebql/DATA/" + uuid + ".tmp";
 
   if (mkdir(tmp.c_str(), 0777) != 0) {
@@ -232,5 +239,13 @@ void SeedH2::save(std::string uuid, std::string docs_root, std::string type) {
 
     json << "]}\n";
     json.close();
+
+    // gz-compress with Boost
+    std::ifstream inStream(filename, std::ios_base::in);
+    std::ofstream outStream(filename + ".gz", std::ios_base::binary);
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
+    in.push(boost::iostreams::gzip_compressor());
+    in.push(inStream);
+    boost::iostreams::copy(in, outStream);
   }
 };
