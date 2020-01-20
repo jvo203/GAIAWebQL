@@ -1060,6 +1060,10 @@ void execute_gaia(const response *res,
               "src=\"https://cdn.jsdelivr.net/gh/jvo203/fits_web_ql/htdocs/"
               "fitswebql/ra_dec_conversion.js\"></script>\n");
 
+  // plotly
+  html.append(
+      "<script src=\"https://cdn.plot.ly/plotly-latest.min.js\"></script>");
+
   // bootstrap
   html.append(
       "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, "
