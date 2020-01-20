@@ -226,7 +226,7 @@ void SeedH2::save(std::string uuid, std::string docs_root, std::string type) {
       for (int i = 0; i < NBINS; i++) {
         Int_t a = _hist->GetBin(i, j);
         auto value = _hist->GetBinContent(a);
-        json << (value > 0.0) ? std::to_string(value) : "null";
+        json << (value > 0) ? std::to_string(value) : "null";
 
         if (i != NBINS - 1)
           json << ",";

@@ -35,7 +35,7 @@ function poll_status() {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            fetch_plots();
+            fetch_json_data();// was fetch_plots()
         }
 
         // repeat the poll until success
@@ -220,7 +220,7 @@ function fetch_rz() {
             var plot = [
                 {
                     z: data.bins,
-                    type: 'heatmap'            
+                    type: 'heatmap'
                 }
             ];
 
