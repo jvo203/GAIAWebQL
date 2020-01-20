@@ -1089,7 +1089,7 @@ void execute_gaia(const response *res,
   else
     html.append("<script type=\"text/javascript\" "
                 "src=\"" +
-                url + "fetch_plots\"></script>");
+                url + "fetch_json_data\"></script>"); // was fetch_plots()
 
   // GAIAWebQL main JavaScript + CSS
   html.append("<script src=\"gaiawebql.js?" VERSION_STRING "\"></script>\n");

@@ -83,7 +83,12 @@ function process_progress_event(data) {
             //remove the progress bar
             $(".progress").remove();
 
-            if (loaded == true) {
+            if (data.exists)
+                fetch_json_data();
+            else
+                poll_status();
+
+            /*if (loaded == true) {
                 // really we should be waiting until onloaded has executed
                 // await/promise?
 
@@ -91,13 +96,59 @@ function process_progress_event(data) {
                     fetch_plots();
                 else
                     poll_status();
-            }
+            }*/
         }
     }
 }
 
 function onloaded() {
     loaded = true;
+}
+
+function test_plotting() {
+    /*var x = [];
+    var y = [];
+
+    for (var i = 0; i < 500; i++) {
+        x[i] = Math.random();
+        y[i] = Math.random() + 1;
+    }
+
+    var data = [
+        {
+            x: x,
+            y: y,
+            histnorm: 'probability',
+            autobinx: false,
+            xbins: {
+                start: -3,
+                end: 3,
+                size: 0.1
+            },
+            autobiny: false,
+            ybins: {
+                start: -2.5,
+                end: 4,
+                size: 0.1
+            },
+            colorscale: [['0', 'rgb(12,51,131)'], ['0.25', 'rgb(10,136,186)'], ['0.5', 'rgb(242,211,56)'], ['0.75', 'rgb(242,143,56)'], ['1', 'rgb(217,30,30)']],
+            type: 'histogram2d'
+        }
+    ];
+    Plotly.newPlot('hr', data);*/
+
+    var data = [
+        {
+            z: [[1, 20, 30], [20, 1, 60], [30, 60, 1]],
+            type: 'heatmap'
+        }
+    ];
+
+    Plotly.newPlot('hr', data);
+}
+
+function fetch_json_data() {
+    console.log("fetching json data for " + uuid);
 }
 
 function fetch_plots() {
