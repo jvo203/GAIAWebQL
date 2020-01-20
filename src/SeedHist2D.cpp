@@ -179,8 +179,8 @@ void SeedH2::save(std::string uuid, std::string docs_root, std::string type) {
 
   std::cout << "saving " << title << " into " << filename << std::endl;
 
-  // mkdir DATA/<uuid>.tmp
-  std::string tmp = "DATA/" + uuid + ".tmp";
+  // mkdir DATA/<uuid>.tmp  
+  std::string tmp = docs_root + "/gaiawebql/DATA/" + uuid + ".tmp";
 
   if (mkdir(tmp.c_str(), 0777) != 0) {
     // return only in case of errors other than "directory already exists"
