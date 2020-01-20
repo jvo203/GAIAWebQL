@@ -237,6 +237,8 @@ function fetch_rz() {
 function fetch_json_data() {
     console.log("fetching json data for " + uuid);
 
+    $('#completed').remove();
+
     fetch_hr();
 
     fetch_xy();
