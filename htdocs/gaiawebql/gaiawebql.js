@@ -147,8 +147,101 @@ function test_plotting() {
     Plotly.newPlot('hr', data);
 }
 
+// the HR plot
+function fetch_hr() {
+    var xmlhttp = new XMLHttpRequest();
+    var url = "DATA/" + uuid + "/hr.json";
+
+    xmlhttp.onreadystatechange = function () {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            var data = xmlhttp.response;
+
+            var plot = [
+                {
+                    z: data.bins,
+                    type: 'heatmap'
+                }
+            ];
+
+            Plotly.newPlot('hr', plot);
+
+            var html = '<p>M<SUB>G</SUB> = phot_g_mean_mag + 5 + 5 log<SUB>10</SUB>(parallax / 1000)';
+
+            if (where != "")
+                html += ', where ' + where;
+
+            html += '</p>';
+
+            $('#mg').append(html);
+        }
+    }
+
+    xmlhttp.open("GET", url, true);
+    xmlhttp.responseType = 'json';
+    xmlhttp.timeout = 0;
+    xmlhttp.send();
+}
+
+// the XY plot
+function fetch_xy() {
+    var xmlhttp = new XMLHttpRequest();
+    var url = "DATA/" + uuid + "/xy.json";
+
+    xmlhttp.onreadystatechange = function () {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            var data = xmlhttp.response;
+
+            var plot = [
+                {
+                    z: data.bins,
+                    type: 'heatmap'
+                }
+            ];
+
+            Plotly.newPlot('xy', plot);
+        }
+    }
+
+    xmlhttp.open("GET", url, true);
+    xmlhttp.responseType = 'json';
+    xmlhttp.timeout = 0;
+    xmlhttp.send();
+}
+
+// the RZ plot
+function fetch_rz() {
+    var xmlhttp = new XMLHttpRequest();
+    var url = "DATA/" + uuid + "/rz.json";
+
+    xmlhttp.onreadystatechange = function () {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            var data = xmlhttp.response;
+
+            var plot = [
+                {
+                    z: data.bins,
+                    type: 'heatmap'            
+                }
+            ];
+
+            Plotly.newPlot('rz', plot);
+        }
+    }
+
+    xmlhttp.open("GET", url, true);
+    xmlhttp.responseType = 'json';
+    xmlhttp.timeout = 0;
+    xmlhttp.send();
+}
+
 function fetch_json_data() {
     console.log("fetching json data for " + uuid);
+
+    fetch_hr();
+
+    fetch_xy();
+
+    fetch_rz();
 }
 
 function fetch_plots() {
