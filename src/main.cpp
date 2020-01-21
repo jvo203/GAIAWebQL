@@ -1097,8 +1097,11 @@ void execute_gaia(const response *res,
               "bootstrap.min.js\"></script>\n");
 
   // CERN JSROOT
+  /*std::string url =
+      "https://root.cern/js/latest/scripts/JSRootCore.min.js?more2d&io&onload=";*/
+  // development version
   std::string url =
-      "https://root.cern/js/latest/scripts/JSRootCore.min.js?more2d&io&onload=";
+      "https://root.cern/js/dev/scripts/JSRootCore.min.js?more2d&io&onload=";
 
   if (!exists)
     html.append("<script type=\"text/javascript\" "
