@@ -1,5 +1,5 @@
 function get_js_version() {
-    return "JS2020-01-17.0";
+    return "JS2020-01-21.0";
 }
 
 function poll_progress() {
@@ -35,7 +35,7 @@ function poll_status() {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            fetch_json_data();// was fetch_plots()
+            fetch_plots();// fetch_plots() or fetch_json_data()
         }
 
         // repeat the poll until success
@@ -83,12 +83,12 @@ function process_progress_event(data) {
             //remove the progress bar
             $(".progress").remove();
 
-            if (data.exists)
+            /*if (data.exists)
                 fetch_json_data();
             else
-                poll_status();
+                poll_status();*/
 
-            /*if (loaded == true) {
+            if (loaded == true) {
                 // really we should be waiting until onloaded has executed
                 // await/promise?
 
@@ -96,7 +96,7 @@ function process_progress_event(data) {
                     fetch_plots();
                 else
                     poll_status();
-            }*/
+            }
         }
     }
 }
@@ -105,50 +105,8 @@ function onloaded() {
     loaded = true;
 }
 
-function test_plotting() {
-    /*var x = [];
-    var y = [];
-
-    for (var i = 0; i < 500; i++) {
-        x[i] = Math.random();
-        y[i] = Math.random() + 1;
-    }
-
-    var data = [
-        {
-            x: x,
-            y: y,
-            histnorm: 'probability',
-            autobinx: false,
-            xbins: {
-                start: -3,
-                end: 3,
-                size: 0.1
-            },
-            autobiny: false,
-            ybins: {
-                start: -2.5,
-                end: 4,
-                size: 0.1
-            },
-            colorscale: [['0', 'rgb(12,51,131)'], ['0.25', 'rgb(10,136,186)'], ['0.5', 'rgb(242,211,56)'], ['0.75', 'rgb(242,143,56)'], ['1', 'rgb(217,30,30)']],
-            type: 'histogram2d'
-        }
-    ];
-    Plotly.newPlot('hr', data);*/
-
-    var data = [
-        {
-            z: [[1, 20, 30], [20, 1, 60], [30, 60, 1]],
-            type: 'heatmap'
-        }
-    ];
-
-    Plotly.newPlot('hr', data);
-}
-
 // the HR plot
-function fetch_hr() {
+/*function fetch_hr() {
     var xmlhttp = new XMLHttpRequest();
     var url = "DATA/" + uuid + "/hr.json";
 
@@ -244,7 +202,7 @@ function fetch_json_data() {
     fetch_xy();
 
     fetch_rz();
-}
+}*/
 
 function fetch_plots() {
     console.log("fetching plots for " + uuid);
@@ -254,10 +212,8 @@ function fetch_plots() {
 
     new JSROOT.TFile("DATA/" + uuid + "/hr.root", function (file) {
         file.ReadObject(uuid + "::HR", function (obj) {
-            // draw only axes and revert the Y axis
-            JSROOT.draw("hr", obj, "AXIS_RY");
-            // overlay the actual histogram on top of the axes
-            JSROOT.draw("hr", obj, "COLZ");
+            // revert the Y axis
+            JSROOT.draw("hr", obj, "COLZ_RY");
 
             var html = '<p>M<SUB>G</SUB> = phot_g_mean_mag + 5 + 5 log<SUB>10</SUB>(parallax / 1000)';
 

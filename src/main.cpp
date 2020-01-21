@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2020-01-20.0"
+#define VERSION_STRING "SV2020-01-21.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -1079,8 +1079,8 @@ void execute_gaia(const response *res,
               "fitswebql/ra_dec_conversion.js\"></script>\n");
 
   // plotly
-  html.append(
-      "<script src=\"https://cdn.plot.ly/plotly-latest.min.js\"></script>");
+  /*html.append(
+      "<script src=\"https://cdn.plot.ly/plotly-latest.min.js\"></script>");*/
 
   // bootstrap
   html.append(
@@ -1096,7 +1096,7 @@ void execute_gaia(const response *res,
               "src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/"
               "bootstrap.min.js\"></script>\n");
 
-  // CERN ROOT JS
+  // CERN JSROOT
   std::string url =
       "https://root.cern/js/latest/scripts/JSRootCore.min.js?more2d&io&onload=";
 
@@ -1107,7 +1107,7 @@ void execute_gaia(const response *res,
   else
     html.append("<script type=\"text/javascript\" "
                 "src=\"" +
-                url + "fetch_json_data\"></script>"); // was fetch_plots()
+                url + "fetch_plots\"></script>"); // was fetch_plots()
 
   // GAIAWebQL main JavaScript + CSS
   html.append("<script src=\"gaiawebql.js?" VERSION_STRING "\"></script>\n");
