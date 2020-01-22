@@ -1162,7 +1162,19 @@ void execute_gaia(const response *res,
   html.append("<div id=\"mg\"></div><hr>");
   html.append(
       "<div id=\"xy\" style=\"width: 800px; height: 600px\"></div><hr>");
-  html.append("<div id=\"rz\" style=\"width: 800px; height: 600px\"></div>");
+  html.append(
+      "<div id=\"rz\" style=\"width: 800px; height: 600px\"></div><hr>");
+  html.append(
+      "<div id=\"xyvr\" style=\"width: 800px; height: 600px\"></div><hr>");
+  html.append(
+      "<div id=\"xyvphi\" style=\"width: 800px; height: 600px\"></div><hr>");
+  html.append(
+      "<div id=\"xyvz\" style=\"width: 800px; height: 600px\"></div><hr>");
+  html.append(
+      "<div id=\"rzvr\" style=\"width: 800px; height: 600px\"></div><hr>");
+  html.append(
+      "<div id=\"rzvphi\" style=\"width: 800px; height: 600px\"></div><hr>");
+  html.append("<div id=\"rzvz\" style=\"width: 800px; height: 600px\"></div>");
   html.append("</div>");
 
   html.append("<script>main();</script>");
