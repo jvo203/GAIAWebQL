@@ -839,18 +839,18 @@ void execute_gaia(const response *res,
         struct plot_data data {};
 
         auto plotter = [&](struct plot_data data) {
-          // a custom solution
+          // 2D
           global_hist._hr.update(data.bp_rp, data.M_G);
           global_hist._xy.update(data.X, data.Y);
           global_hist._rz.update(data.R, data.Z);
 
-          // CERN ROOT
-          /*global_hist.XYVR->Fill(data.X, data.Y, data.VR);
-          global_hist.XYVPhi->Fill(data.X, data.Y, data.VPhi);
-          global_hist.XYVZ->Fill(data.X, data.Y, data.VZ);
-          global_hist.RZVR->Fill(data.R, data.Z, data.VR);
-          global_hist.RZVPhi->Fill(data.R, data.Z, data.VPhi);
-          global_hist.RZVZ->Fill(data.R, data.Z, data.VZ);*/
+          // 3D
+          global_hist._xyvr.update(data.X, data.Y, data.VR);
+          global_hist._xyvphi.update(data.X, data.Y, data.VPhi);
+          global_hist._xyvz.update(data.X, data.Y, data.VZ);
+          global_hist._rzvr.update(data.R, data.Z, data.VR);
+          global_hist._rzvphi.update(data.R, data.Z, data.VPhi);
+          global_hist._rzvz.update(data.R, data.Z, data.VZ);
         };
 
         // older Boost on py1 does not have consume_all!!!
