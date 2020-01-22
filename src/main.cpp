@@ -61,6 +61,7 @@ using std::chrono::steady_clock;
 #include "json.h"
 
 #include "SeedHist2D.hpp"
+#include "SeedHist3D.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
