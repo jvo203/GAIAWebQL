@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2020-01-21.0"
+#define VERSION_STRING "SV2020-01-22.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -915,21 +915,11 @@ void execute_gaia(const response *res,
       std::cout << "a global queue length: " << queue.queue.size() << std::endl;
 
       if (!search_aborted) {
+        /*
 #pragma omp parallel
         {
 #pragma omp single
           {
-            // save the histograms to disk
-
-#pragma omp task
-            global_hist._hr.export_root(uuid, docs_root, "hr");
-
-#pragma omp task
-            global_hist._xy.export_root(uuid, docs_root, "xy");
-
-#pragma omp task
-            global_hist._rz.export_root(uuid, docs_root, "rz");
-
             // save as JSON too for plotly.js to use
 
 #pragma omp task
@@ -941,7 +931,13 @@ void execute_gaia(const response *res,
 #pragma omp task
             global_hist._rz.save(uuid, docs_root, "rz");
           }
-        }
+        }*/
+
+        // save the histograms to disk
+        // cannot be done in parallel due to the global ROOT lock
+        global_hist._hr.export_root(uuid, docs_root, "hr");
+        global_hist._xy.export_root(uuid, docs_root, "xy");
+        global_hist._rz.export_root(uuid, docs_root, "rz");
 
         // rename the temporary dir to just "DATA/uuid"
         std::string tmp = docs_root + "/gaiawebql/DATA/" + uuid + ".tmp";
