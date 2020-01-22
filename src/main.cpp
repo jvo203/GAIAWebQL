@@ -936,9 +936,18 @@ void execute_gaia(const response *res,
 
         // save the histograms to disk
         // cannot be done in parallel due to the global ROOT lock
+        // 2D
         global_hist._hr.export_root(uuid, docs_root, "hr");
         global_hist._xy.export_root(uuid, docs_root, "xy");
         global_hist._rz.export_root(uuid, docs_root, "rz");
+
+        // 3D
+        global_hist._xyvr.export_root(uuid, docs_root, "xyvr");
+        global_hist._xyvphi.export_root(uuid, docs_root, "xyvphi");
+        global_hist._xyvz.export_root(uuid, docs_root, "xyvz");
+        global_hist._rzvr.export_root(uuid, docs_root, "rzvr");
+        global_hist._rzvphi.export_root(uuid, docs_root, "rzvphi");
+        global_hist._rzvz.export_root(uuid, docs_root, "rzvz");
 
         // rename the temporary dir to just "DATA/uuid"
         std::string tmp = docs_root + "/gaiawebql/DATA/" + uuid + ".tmp";
