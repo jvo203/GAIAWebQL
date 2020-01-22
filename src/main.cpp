@@ -370,21 +370,32 @@ std::unordered_map<std::string, std::shared_ptr<struct gaia_plots>> results;
 std::mutex results_mtx;
 
 struct gaia_hist {
+  // 2D
   SeedH2 _hr;
   SeedH2 _xy;
   SeedH2 _rz;
 
-  /*TH3 *XYVR;
-  TH3 *XYVPhi;
-  TH3 *XYVZ;
-  TH3 *RZVR;
-  TH3 *RZVPhi;
-  TH3 *RZVZ;*/
+  // 3D
+  SeedH3 _xyvr;
+  SeedH3 _xyvphi;
+  SeedH3 _xyvz;
+  SeedH3 _rzvr;
+  SeedH3 _rzvphi;
+  SeedH3 _rzvz;
 
   gaia_hist() {
+    // 3D
     _hr = SeedH2(true);
     _xy = SeedH2(false);
     _rz = SeedH2(false);
+
+    // 3D
+    _xyvr = SeedH3(false);
+    _xyvphi = SeedH3(false);
+    _xyvz = SeedH3(false);
+    _rzvr = SeedH3(false);
+    _rzvphi = SeedH3(false);
+    _rzvz = SeedH3(false);
   }
 };
 
@@ -774,41 +785,30 @@ void execute_gaia(const response *res,
       struct gaia_hist global_hist;
       char name[255];
 
+      // 2D histograms
       global_hist._hr.set_title(uuid + "::HR", "Hertzsprung-Russell diagram",
                                 "(BP-RP) [mag]", "M_{G} [mag]");
       global_hist._xy.set_title(uuid + "::XY", "X-Y", "X [kpc]", "Y [kpc]");
       global_hist._rz.set_title(uuid + "::RZ", "R-Z", "R [kpc]", "Z [kpc]");
 
       // 3D histograms
-      /*sprintf(name, "%s/XYVR", uuid.c_str());
-      global_hist.XYVR = new TH3D(name, "X-Y-V_{R}", 100, -0.1, 0.1, 100, -0.1,
-                                  0.1, 100, -0.1, 0.1);
-      global_hist.XYVR->SetCanExtend(TH1::kAllAxes);
+      global_hist._xyvr.set_title(uuid + "::XYVR", "X-Y-VR", "X [kpc]",
+                                  "Y [kpc]", "V_{R} [km/s]");
 
-      sprintf(name, "%s/XYVPhi", uuid.c_str());
-      global_hist.XYVPhi = new TH3D(name, "X-Y-V_{\\Phi}", 100, -0.1, 0.1, 100,
-                                    -0.1, 0.1, 100, -0.1, 0.1);
-      global_hist.XYVPhi->SetCanExtend(TH1::kAllAxes);
+      global_hist._xyvphi.set_title(uuid + "::XYVPhi", "X-Y-VPhi", "X [kpc]",
+                                    "Y [kpc]", "V_{\\Phi} [km/s]");
 
-      sprintf(name, "%s/XYVZ", uuid.c_str());
-      global_hist.XYVZ = new TH3D(name, "X-Y-V_{Z}", 100, -0.1, 0.1, 100, -0.1,
-                                  0.1, 100, -0.1, 0.1);
-      global_hist.XYVZ->SetCanExtend(TH1::kAllAxes);
+      global_hist._xyvz.set_title(uuid + "::XYVZ", "X-Y-VZ", "X [kpc]",
+                                  "Y [kpc]", "V_{Z} [km/s]");
 
-      sprintf(name, "%s/RZVR", uuid.c_str());
-      global_hist.RZVR = new TH3D(name, "R-Z-V_{R}", 100, -0.1, 0.1, 100, -0.1,
-                                  0.1, 100, -0.1, 0.1);
-      global_hist.RZVR->SetCanExtend(TH1::kAllAxes);
+      global_hist._rzvr.set_title(uuid + "::RZVR", "R-Z-VR", "R [kpc]",
+                                  "Z [kpc]", "V_{R} [km/s]");
 
-      sprintf(name, "%s/RZVPhi", uuid.c_str());
-      global_hist.RZVPhi = new TH3D(name, "R-Z-V_{\\Phi}", 100, -0.1, 0.1, 100,
-                                    -0.1, 0.1, 100, -0.1, 0.1);
-      global_hist.RZVPhi->SetCanExtend(TH1::kAllAxes);
+      global_hist._rzvphi.set_title(uuid + "::RZVPhi", "R-Z-VPhi", "R [kpc]",
+                                    "Z [kpc]", "V_{\\Phi} [km/s]");
 
-      sprintf(name, "%s/RZVZ", uuid.c_str());
-      global_hist.RZVZ = new TH3D(name, "R-Z-V_{Z}", 100, -0.1, 0.1, 100, -0.1,
-                                  0.1, 100, -0.1, 0.1);
-      global_hist.RZVZ->SetCanExtend(TH1::kAllAxes);*/
+      global_hist._rzvz.set_title(uuid + "::RZVZ", "R-Z-VZ", "R [kpc]",
+                                  "Z [kpc]", "V_{Z} [km/s]");
 
       for (int i = 0; i < max_threads; i++) {
         thread_coords[i] = std::make_shared<OmniCoords>(OmniCoords());

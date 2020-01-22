@@ -97,7 +97,7 @@ void SeedH2::flush() {
   /*boost::uuids::uuid uuid = boost::uuids::random_generator()();
   std::string name = boost::lexical_cast<std::string>(uuid);*/
 
-  _hist = new TH2D(name.c_str(), title.c_str(), NBINS, x_min, x_max, NBINS,
+  _hist = new TH2D(name.c_str(), title.c_str(), NBINS2, x_min, x_max, NBINS2,
                    y_min, y_max);
   _hist->SetCanExtend(TH1::kAllAxes);
   _hist->SetStats(false);
@@ -201,11 +201,11 @@ void SeedH2::save(std::string uuid, std::string docs_root, std::string type) {
 
   axis = _hist->GetXaxis();
   x_min = axis->GetBinCenter(0);
-  x_max = axis->GetBinCenter(NBINS - 1);
+  x_max = axis->GetBinCenter(NBINS2 - 1);
 
   axis = _hist->GetYaxis();
   y_min = axis->GetBinCenter(0);
-  y_max = axis->GetBinCenter(NBINS - 1);
+  y_max = axis->GetBinCenter(NBINS2 - 1);
 
   // write the bin data
   {
@@ -213,7 +213,7 @@ void SeedH2::save(std::string uuid, std::string docs_root, std::string type) {
     std::ofstream json(filename);
 
     json << "{\n";
-    json << "\t\"NBINS\" : " << NBINS << ",\n";
+    json << "\t\"NBINS2\" : " << NBINS2 << ",\n";
     json << "\t\"xmin\" : " << x_min << ",\n";
     json << "\t\"xmax\" : " << x_max << ",\n";
     json << "\t\"ymin\" : " << y_min << ",\n";
@@ -221,21 +221,21 @@ void SeedH2::save(std::string uuid, std::string docs_root, std::string type) {
 
     json << "\t\"bins\" : [";
 
-    for (int j = 0; j < NBINS; j++) {
+    for (int j = 0; j < NBINS2; j++) {
       json << "[";
-      for (int i = 0; i < NBINS; i++) {
+      for (int i = 0; i < NBINS2; i++) {
         Int_t a = _hist->GetBin(i, j);
         auto value = _hist->GetBinContent(a);
         json << ((value >= 1.0) ? std::to_string(log10(value))
                                 : "null"); // log-z
         // json << value;
 
-        if (i != NBINS - 1)
+        if (i != NBINS2 - 1)
           json << ",";
       }
       json << "]";
 
-      if (j != NBINS - 1)
+      if (j != NBINS2 - 1)
         json << ",";
     }
 

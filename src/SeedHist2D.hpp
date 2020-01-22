@@ -9,7 +9,7 @@
 #include <TH2.h>
 
 #define BURN_IN 1000000
-#define NBINS 600
+#define NBINS2 600
 
 class SeedH2 {
 public:

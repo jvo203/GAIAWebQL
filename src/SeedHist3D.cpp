@@ -104,8 +104,8 @@ void SeedH3::flush() {
   printf("[%s] x_min: %f x_max: %f y_min: %f y_max: %f z_min: %f z_max: %f\n",
          title.c_str(), x_min, x_max, y_min, y_max, z_min, z_max);
 
-  _hist = new TH3D(name.c_str(), title.c_str(), NBINS, x_min, x_max, NBINS,
-                   y_min, y_max, NBINS, z_min, z_max);
+  _hist = new TH3D(name.c_str(), title.c_str(), NBINS3, x_min, x_max, NBINS3,
+                   y_min, y_max, NBINS3, z_min, z_max);
   _hist->SetCanExtend(TH1::kAllAxes);
   _hist->SetStats(false);
   _hist->GetXaxis()->SetTitle(x_title.c_str());

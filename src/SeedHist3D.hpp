@@ -9,7 +9,7 @@
 #include <TH3.h>
 
 #define BURN_IN 1000000
-#define NBINS 600
+#define NBINS3 100
 
 class SeedH3 {
 public:
