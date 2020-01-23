@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2020-01-22.0"
+#define VERSION_STRING "SV2020-01-23.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -792,22 +792,22 @@ void execute_gaia(const response *res,
       global_hist._rz.set_title(uuid + "::RZ", "R-Z", "R [kpc]", "Z [kpc]");
 
       // 3D histograms
-      global_hist._xyvr.set_title(uuid + "::XYVR", "X-Y-VR", "X [kpc]",
+      global_hist._xyvr.set_title(uuid + "::XYVR", "X-Y-V_{R}", "X [kpc]",
                                   "Y [kpc]", "V_{R} [km/s]");
 
-      global_hist._xyvphi.set_title(uuid + "::XYVPhi", "X-Y-VPhi", "X [kpc]",
-                                    "Y [kpc]", "V_{\\Phi} [km/s]");
+      global_hist._xyvphi.set_title(uuid + "::XYVPhi", "X-Y-V_{\\Phi}",
+                                    "X [kpc]", "Y [kpc]", "V_{\\Phi} [km/s]");
 
-      global_hist._xyvz.set_title(uuid + "::XYVZ", "X-Y-VZ", "X [kpc]",
+      global_hist._xyvz.set_title(uuid + "::XYVZ", "X-Y-V_{Z}", "X [kpc]",
                                   "Y [kpc]", "V_{Z} [km/s]");
 
-      global_hist._rzvr.set_title(uuid + "::RZVR", "R-Z-VR", "R [kpc]",
+      global_hist._rzvr.set_title(uuid + "::RZVR", "R-Z-V_{R}", "R [kpc]",
                                   "Z [kpc]", "V_{R} [km/s]");
 
-      global_hist._rzvphi.set_title(uuid + "::RZVPhi", "R-Z-VPhi", "R [kpc]",
-                                    "Z [kpc]", "V_{\\Phi} [km/s]");
+      global_hist._rzvphi.set_title(uuid + "::RZVPhi", "R-Z-V_{\\Phi}",
+                                    "R [kpc]", "Z [kpc]", "V_{\\Phi} [km/s]");
 
-      global_hist._rzvz.set_title(uuid + "::RZVZ", "R-Z-VZ", "R [kpc]",
+      global_hist._rzvz.set_title(uuid + "::RZVZ", "R-Z-V_{Z}", "R [kpc]",
                                   "Z [kpc]", "V_{Z} [km/s]");
 
       for (int i = 0; i < max_threads; i++) {
@@ -872,6 +872,14 @@ void execute_gaia(const response *res,
         global_hist._hr.flush();
         global_hist._xy.flush();
         global_hist._rz.flush();
+
+        global_hist._xyvr.flush();
+        global_hist._xyvphi.flush();
+        global_hist._xyvz.flush();
+
+        global_hist._rzvr.flush();
+        global_hist._rzvphi.flush();
+        global_hist._rzvz.flush();
 
         std::cout << "a histogram thread ended after processing " << counter
                   << " values.\n";
@@ -1104,10 +1112,10 @@ void execute_gaia(const response *res,
 
   // CERN JSROOT
   /*std::string url =
-      "https://root.cern/js/latest/scripts/JSRootCore.min.js?more2d&io&onload=";*/
+      "https://root.cern/js/latest/scripts/JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
   // development version
-  std::string url =
-      "https://root.cern/js/dev/scripts/JSRootCore.min.js?more2d&io&onload=";
+  std::string url = "https://root.cern/js/dev/scripts/"
+                    "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";
 
   if (!exists)
     html.append("<script type=\"text/javascript\" "

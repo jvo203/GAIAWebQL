@@ -110,6 +110,7 @@ void SeedH3::flush() {
   _hist->SetStats(false);
   _hist->GetXaxis()->SetTitle(x_title.c_str());
   _hist->GetYaxis()->SetTitle(y_title.c_str());
+  _hist->GetZaxis()->SetTitle(z_title.c_str());
 
   for (auto &x : data) {
     double _x, _y, _z;
