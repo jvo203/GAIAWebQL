@@ -1,5 +1,5 @@
 function get_js_version() {
-    return "JS2020-01-23.0";
+    return "JS2020-01-27.0";
 }
 
 function poll_progress() {
@@ -240,37 +240,37 @@ function fetch_plots() {
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvr.root", function (file) {
         file.ReadObject(uuid + "::XYVR", function (obj) {
-            JSROOT.draw("xyvr", obj, "iso");
+            JSROOT.draw("xyvr", obj, "colz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvphi.root", function (file) {
         file.ReadObject(uuid + "::XYVPhi", function (obj) {
-            JSROOT.draw("xyvphi", obj, "iso");
+            JSROOT.draw("xyvphi", obj, "colz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvz.root", function (file) {
         file.ReadObject(uuid + "::XYVZ", function (obj) {
-            JSROOT.draw("xyvz", obj, "iso");
+            JSROOT.draw("xyvz", obj, "colz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvr.root", function (file) {
         file.ReadObject(uuid + "::RZVR", function (obj) {
-            JSROOT.draw("rzvr", obj, "iso");
+            JSROOT.draw("rzvr", obj, "colz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvphi.root", function (file) {
         file.ReadObject(uuid + "::RZVPhi", function (obj) {
-            JSROOT.draw("rzvphi", obj, "iso");
+            JSROOT.draw("rzvphi", obj, "colz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvz.root", function (file) {
         file.ReadObject(uuid + "::RZVZ", function (obj) {
-            JSROOT.draw("rzvz", obj, "iso");
+            JSROOT.draw("rzvz", obj, "colz");
         });
     });
 }
