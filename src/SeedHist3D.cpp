@@ -14,6 +14,7 @@
 #include "SeedHist3D.hpp"
 
 #include <TFile.h>
+#include <TH2.h>
 #include <TThread.h>
 
 #include <boost/lexical_cast.hpp>
@@ -141,6 +142,8 @@ void SeedH3::export_root(std::string uuid, std::string docs_root,
     }
   }
 
+  TH2D *hist = (TH2D *)_hist->Project3D("xy");
+
   filename = tmp + "/" + type + ".root";
 
   TThread::Lock();
@@ -148,8 +151,10 @@ void SeedH3::export_root(std::string uuid, std::string docs_root,
   TFile outputFile(filename.c_str(), "RECREATE");
   outputFile.SetCompressionLevel(
       ROOT::RCompressionSetting::ELevel::kDefaultZLIB);
-  _hist->Write();
+  hist->Write();
   outputFile.Close();
 
   TThread::UnLock();
+
+  delete hist;
 }
