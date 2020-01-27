@@ -6,7 +6,7 @@
 #include <vector>
 
 // CERN ROOT
-#include <TH3.h>
+#include <TProfile2D.h>
 
 #define BURN_IN 1000000
 #define NBINS3 100
@@ -37,5 +37,5 @@ private:
   std::vector<std::tuple<float, float, float>> data;
   bool init_done;
   bool invert;
-  TH3 *_hist;
+  TProfile2D *_hist;
 };

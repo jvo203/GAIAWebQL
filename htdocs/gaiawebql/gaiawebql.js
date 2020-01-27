@@ -208,7 +208,7 @@ function fetch_plots() {
     console.log("fetching plots for " + uuid);
 
     $('#completed').remove();
-    JSROOT.gStyle.fOptLogz = 1;
+    //JSROOT.gStyle.fOptLogz = 1;
 
     new JSROOT.TFile("DATA/" + uuid + "/hr.root", function (file) {
         file.ReadObject(uuid + "::HR", function (obj) {
@@ -240,37 +240,37 @@ function fetch_plots() {
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvr.root", function (file) {
         file.ReadObject(uuid + "::XYVR", function (obj) {
-            JSROOT.draw("xyvr", obj, "colz");
+            JSROOT.draw("xyvr", obj, "contz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvphi.root", function (file) {
         file.ReadObject(uuid + "::XYVPhi", function (obj) {
-            JSROOT.draw("xyvphi", obj, "colz");
+            JSROOT.draw("xyvphi", obj, "contz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvz.root", function (file) {
         file.ReadObject(uuid + "::XYVZ", function (obj) {
-            JSROOT.draw("xyvz", obj, "colz");
+            JSROOT.draw("xyvz", obj, "contz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvr.root", function (file) {
         file.ReadObject(uuid + "::RZVR", function (obj) {
-            JSROOT.draw("rzvr", obj, "colz");
+            JSROOT.draw("rzvr", obj, "contz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvphi.root", function (file) {
         file.ReadObject(uuid + "::RZVPhi", function (obj) {
-            JSROOT.draw("rzvphi", obj, "colz");
+            JSROOT.draw("rzvphi", obj, "contz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvz.root", function (file) {
         file.ReadObject(uuid + "::RZVZ", function (obj) {
-            JSROOT.draw("rzvz", obj, "colz");
+            JSROOT.draw("rzvz", obj, "contz");
         });
     });
 }

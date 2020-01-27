@@ -14,7 +14,6 @@
 #include "SeedHist3D.hpp"
 
 #include <TFile.h>
-#include <TProfile2D.h>
 #include <TThread.h>
 
 #include <boost/lexical_cast.hpp>
@@ -105,8 +104,9 @@ void SeedH3::flush() {
   printf("[%s] x_min: %f x_max: %f y_min: %f y_max: %f z_min: %f z_max: %f\n",
          title.c_str(), x_min, x_max, y_min, y_max, z_min, z_max);
 
-  _hist = new TH3D(name.c_str(), title.c_str(), NBINS3, x_min, x_max, NBINS3,
-                   y_min, y_max, NBINS3, z_min, z_max);
+  _hist = new TProfile2D(name.c_str(), title.c_str(), NBINS3, x_min, x_max,
+                         NBINS3, y_min, y_max, z_min, z_max);
+
   _hist->SetCanExtend(TH1::kAllAxes);
   _hist->SetStats(false);
   _hist->GetXaxis()->SetTitle(x_title.c_str());
@@ -142,8 +142,6 @@ void SeedH3::export_root(std::string uuid, std::string docs_root,
     }
   }
 
-  TProfile2D *profile = _hist->Project3DProfile("xy");
-
   filename = tmp + "/" + type + ".root";
 
   TThread::Lock();
@@ -151,10 +149,9 @@ void SeedH3::export_root(std::string uuid, std::string docs_root,
   TFile outputFile(filename.c_str(), "RECREATE");
   outputFile.SetCompressionLevel(
       ROOT::RCompressionSetting::ELevel::kDefaultZLIB);
-  profile->Write();
+  _hist->SetStats(false);
+  _hist->Write();
   outputFile.Close();
 
   TThread::UnLock();
-
-  delete profile;
 }
