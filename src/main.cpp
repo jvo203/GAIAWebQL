@@ -1123,7 +1123,7 @@ void execute_gaia(const response *res,
       "https://root.cern/js/latest/scripts/JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
   // development version
   std::string url = "https://root.cern/js/dev/scripts/"
-                    "JSRootCore.min.js?more2d&3d&io&math&onload=";
+                    "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";
 
   if (!exists)
     html.append("<script type=\"text/javascript\" "
