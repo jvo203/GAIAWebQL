@@ -25,12 +25,20 @@ public:
     y_title = _y_axis;
     z_title = _z_axis;
   };
+
+  void set_z_axis(std::string value, std::string unit) {
+    z_value = value;
+    z_unit = unit;
+  };
+
   void update(float _x, float _y, float _z);
   void flush();
+  void FillRMS(TH2D *error);
   void export_root(std::string uuid, std::string docs_root, std::string type);
 
 private:
   std::string name, title, x_title, y_title, z_title;
+  std::string z_value, z_unit;
   double x_min, x_max;
   double y_min, y_max;
   double z_min, z_max;

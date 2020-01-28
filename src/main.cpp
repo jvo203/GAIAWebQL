@@ -792,23 +792,31 @@ void execute_gaia(const response *res,
       global_hist._rz.set_title(uuid + "::RZ", "R-Z", "R [kpc]", "Z [kpc]");
 
       // 3D histograms
-      global_hist._xyvr.set_title(uuid + "::XYVR", "X-Y-V_{R}", "X [kpc]",
-                                  "Y [kpc]", "V_{R} [km/s]");
+      global_hist._xyvr.set_title(uuid + "::XYVR", "X-Y-#bar{V}_{R}", "X [kpc]",
+                                  "Y [kpc]", "#bar{V}_{R} [km/s]");
+      global_hist._xyvr.set_z_axis("#bar{V}_{R}", "[km/s]");
 
-      global_hist._xyvphi.set_title(uuid + "::XYVPhi", "X-Y-V_{\\Phi}",
-                                    "X [kpc]", "Y [kpc]", "V_{\\Phi} [km/s]");
+      global_hist._xyvphi.set_title(uuid + "::XYVPhi", "X-Y-#bar{V}_{#Phi}",
+                                    "X [kpc]", "Y [kpc]",
+                                    "#bar{V}_{#Phi} [km/s]");
+      global_hist._xyvphi.set_z_axis("#bar{V}_{#Phi}", "[km/s]");
 
-      global_hist._xyvz.set_title(uuid + "::XYVZ", "X-Y-V_{Z}", "X [kpc]",
-                                  "Y [kpc]", "V_{Z} [km/s]");
+      global_hist._xyvz.set_title(uuid + "::XYVZ", "X-Y-#bar{V}_{Z}", "X [kpc]",
+                                  "Y [kpc]", "#bar{V}_{Z} [km/s]");
+      global_hist._xyvz.set_z_axis("#bar{V}_{Z}", "[km/s]");
 
-      global_hist._rzvr.set_title(uuid + "::RZVR", "R-Z-V_{R}", "R [kpc]",
-                                  "Z [kpc]", "V_{R} [km/s]");
+      global_hist._rzvr.set_title(uuid + "::RZVR", "R-Z-#bar{V}_{R}", "R [kpc]",
+                                  "Z [kpc]", "#bar{V}_{R} [km/s]");
+      global_hist._rzvr.set_z_axis("#bar{V}_{R}", "[km/s]");
 
-      global_hist._rzvphi.set_title(uuid + "::RZVPhi", "R-Z-V_{\\Phi}",
-                                    "R [kpc]", "Z [kpc]", "V_{\\Phi} [km/s]");
+      global_hist._rzvphi.set_title(uuid + "::RZVPhi", "R-Z-#bar{V}_{#Phi}",
+                                    "R [kpc]", "Z [kpc]",
+                                    "#bar{V}_{#Phi} [km/s]");
+      global_hist._rzvphi.set_z_axis("#bar{V}_{#Phi}", "[km/s]");
 
-      global_hist._rzvz.set_title(uuid + "::RZVZ", "R-Z-V_{Z}", "R [kpc]",
-                                  "Z [kpc]", "V_{Z} [km/s]");
+      global_hist._rzvz.set_title(uuid + "::RZVZ", "R-Z-#bar{V}_{Z}", "R [kpc]",
+                                  "Z [kpc]", "#bar{V}_{Z} [km/s]");
+      global_hist._rzvz.set_z_axis("#bar{V}_{Z}", "[km/s]");
 
       for (int i = 0; i < max_threads; i++) {
         thread_coords[i] = std::make_shared<OmniCoords>(OmniCoords());
@@ -1115,7 +1123,7 @@ void execute_gaia(const response *res,
       "https://root.cern/js/latest/scripts/JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
   // development version
   std::string url = "https://root.cern/js/dev/scripts/"
-                    "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";
+                    "JSRootCore.min.js?more2d&3d&io&math&onload=";
 
   if (!exists)
     html.append("<script type=\"text/javascript\" "
@@ -1166,23 +1174,37 @@ void execute_gaia(const response *res,
     html.append("</div>");
   }
 
-  html.append("<div id=\"hr\" style=\"width: 800px; height: 600px\"></div>");
+  html.append("<div id=\"hr\" style=\"width: 1000px; height: 600px\"></div>");
+
   html.append("<div id=\"mg\"></div><hr>");
+
   html.append(
-      "<div id=\"xy\" style=\"width: 800px; height: 600px\"></div><hr>");
+      "<div id=\"xy\" style=\"width: 1000px; height: 600px\"></div><hr>");
+
   html.append(
-      "<div id=\"rz\" style=\"width: 800px; height: 600px\"></div><hr>");
+      "<div id=\"rz\" style=\"width: 1000px; height: 600px\"></div><hr>");
+
   html.append(
-      "<div id=\"xyvr\" style=\"width: 800px; height: 600px\"></div><hr>");
+      "<div id=\"xyvr\" style=\"width: 1000px; height: 600px\"></div><hr>");
+
   html.append(
-      "<div id=\"xyvphi\" style=\"width: 800px; height: 600px\"></div><hr>");
+      "<div id=\"xyvphi\" style=\"width: 1000px; height: 600px\"></div><hr>");
+
   html.append(
-      "<div id=\"xyvz\" style=\"width: 800px; height: 600px\"></div><hr>");
+      "<div id=\"xyvz\" style=\"width: 1000px; height: 600px\"></div><hr>");
+
   html.append(
-      "<div id=\"rzvr\" style=\"width: 800px; height: 600px\"></div><hr>");
+      "<div id=\"rzvr\" style=\"width: 1000px; height: 600px\"></div><hr>");
+
   html.append(
-      "<div id=\"rzvphi\" style=\"width: 800px; height: 600px\"></div><hr>");
-  html.append("<div id=\"rzvz\" style=\"width: 800px; height: 600px\"></div>");
+      "<div id=\"rzvphi\" style=\"width: 1000px; height: 600px\"></div><hr>");
+
+  html.append("<div id=\"rzvz\" style=\"width: 1200px; height: "
+              "500px\"><table><tr><td><div "
+              "id=\"rzvz_mean\" style=\"width: 600px; height: "
+              "500px\"></div></td><td><div "
+              "id=\"rzvz_error\" style=\"width: 600px; height: "
+              "500px\"></div></td></tr></table></div>");
   html.append("</div>");
 
   html.append("<script>main();</script>");

@@ -13,6 +13,7 @@
 
 #include "SeedHist3D.hpp"
 
+#include <TCanvas.h>
 #include <TFile.h>
 #include <TThread.h>
 
@@ -142,16 +143,66 @@ void SeedH3::export_root(std::string uuid, std::string docs_root,
     }
   }
 
-  filename = tmp + "/" + type + ".root";
+  filename = tmp + "/" + type + "_mean.root";
 
   TThread::Lock();
 
   TFile outputFile(filename.c_str(), "RECREATE");
   outputFile.SetCompressionLevel(
       ROOT::RCompressionSetting::ELevel::kDefaultZLIB);
-  _hist->SetStats(false);
-  _hist->Write();
+
+  TCanvas *c = new TCanvas((name + "_mean").c_str(), title.c_str(), 1000, 600);
+  c->SetGrid(true);
+  _hist->Draw("CONTZ"); // COLZ or CONTZ
+  c->SetRightMargin(0.2);
+  c->SetLeftMargin(0.15);
+
+  c->Write();
   outputFile.Close();
+  delete c;
+
+  // export the errors too
+  TH2D *error = _hist->ProjectionXY();
+  error->SetStats(false);
+  error->GetXaxis()->SetTitle(x_title.c_str());
+  error->GetYaxis()->SetTitle(y_title.c_str());
+  error->GetZaxis()->SetTitle(
+      (std::string("#sigma_{") + z_value + std::string("} ") + z_unit).c_str());
+
+  // TO DO: fix the main title too
+
+  FillRMS(error);
+
+  filename = tmp + "/" + type + "_error.root";
+
+  TFile errorFile(filename.c_str(), "RECREATE");
+  errorFile.SetCompressionLevel(
+      ROOT::RCompressionSetting::ELevel::kDefaultZLIB);
+
+  c = new TCanvas((name + "_error").c_str(), title.c_str(), 600, 500);
+  c->SetGrid(true);
+  error->Draw("CONTZ"); // COLZ or CONTZ
+  c->SetRightMargin(0.2);
+  c->SetLeftMargin(0.15);
+
+  c->Write();
+  errorFile.Close();
+
+  delete c;
+  delete error;
 
   TThread::UnLock();
+}
+
+void SeedH3::FillRMS(TH2D *error) {
+  Int_t nx = _hist->GetNbinsX();
+  Int_t ny = _hist->GetNbinsY();
+
+  for (Int_t i = 0; i < nx; i++) {
+    for (Int_t j = 0; j < ny; j++) {
+      Int_t bin = _hist->GetBin(i, j);
+      auto value = _hist->GetBinError(bin);
+      error->SetBinContent(bin, value);
+    }
+  }
 }

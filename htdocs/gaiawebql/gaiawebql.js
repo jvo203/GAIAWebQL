@@ -1,5 +1,5 @@
 function get_js_version() {
-    return "JS2020-01-27.0";
+    return "JS2020-01-28.1";
 }
 
 function poll_progress() {
@@ -209,11 +209,13 @@ function fetch_plots() {
 
     $('#completed').remove();
     //JSROOT.gStyle.fOptLogz = 1;
+    JSROOT.gStyle.fPadLeftMargin = 0.15;
+    JSROOT.gStyle.fPadRightMargin = 0.2;
 
     new JSROOT.TFile("DATA/" + uuid + "/hr.root", function (file) {
         file.ReadObject(uuid + "::HR", function (obj) {
             // revert the Y axis
-            JSROOT.draw("hr", obj, "colz_ry");
+            JSROOT.draw("hr", obj, "colz_ry;logz");
 
             var html = '<p>M<SUB>G</SUB> = phot_g_mean_mag + 5 + 5 log<SUB>10</SUB>(parallax / 1000)';
 
@@ -228,49 +230,55 @@ function fetch_plots() {
 
     new JSROOT.TFile("DATA/" + uuid + "/xy.root", function (file) {
         file.ReadObject(uuid + "::XY", function (obj) {
-            JSROOT.draw("xy", obj, "colz");
+            JSROOT.draw("xy", obj, "colz;logz");
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rz.root", function (file) {
         file.ReadObject(uuid + "::RZ", function (obj) {
-            JSROOT.draw("rz", obj, "colz");
+            JSROOT.draw("rz", obj, "colz;logz");
         });
     });
 
-    new JSROOT.TFile("DATA/" + uuid + "/xyvr.root", function (file) {
-        file.ReadObject(uuid + "::XYVR", function (obj) {
-            JSROOT.draw("xyvr", obj, "contz");
+    new JSROOT.TFile("DATA/" + uuid + "/xyvr_mean.root", function (file) {
+        file.ReadObject(uuid + "::XYVR_mean", function (obj) {
+            JSROOT.draw("xyvr", obj);
         });
     });
 
-    new JSROOT.TFile("DATA/" + uuid + "/xyvphi.root", function (file) {
-        file.ReadObject(uuid + "::XYVPhi", function (obj) {
-            JSROOT.draw("xyvphi", obj, "contz");
+    new JSROOT.TFile("DATA/" + uuid + "/xyvphi_mean.root", function (file) {
+        file.ReadObject(uuid + "::XYVPhi_mean", function (obj) {
+            JSROOT.draw("xyvphi", obj);
         });
     });
 
-    new JSROOT.TFile("DATA/" + uuid + "/xyvz.root", function (file) {
-        file.ReadObject(uuid + "::XYVZ", function (obj) {
-            JSROOT.draw("xyvz", obj, "contz");
+    new JSROOT.TFile("DATA/" + uuid + "/xyvz_mean.root", function (file) {
+        file.ReadObject(uuid + "::XYVZ_mean", function (obj) {
+            JSROOT.draw("xyvz", obj);
         });
     });
 
-    new JSROOT.TFile("DATA/" + uuid + "/rzvr.root", function (file) {
-        file.ReadObject(uuid + "::RZVR", function (obj) {
-            JSROOT.draw("rzvr", obj, "contz");
+    new JSROOT.TFile("DATA/" + uuid + "/rzvr_mean.root", function (file) {
+        file.ReadObject(uuid + "::RZVR_mean", function (obj) {
+            JSROOT.draw("rzvr", obj);
         });
     });
 
-    new JSROOT.TFile("DATA/" + uuid + "/rzvphi.root", function (file) {
-        file.ReadObject(uuid + "::RZVPhi", function (obj) {
-            JSROOT.draw("rzvphi", obj, "contz");
+    new JSROOT.TFile("DATA/" + uuid + "/rzvphi_mean.root", function (file) {
+        file.ReadObject(uuid + "::RZVPhi_mean", function (obj) {
+            JSROOT.draw("rzvphi", obj);
         });
     });
 
-    new JSROOT.TFile("DATA/" + uuid + "/rzvz.root", function (file) {
-        file.ReadObject(uuid + "::RZVZ", function (obj) {
-            JSROOT.draw("rzvz", obj, "contz");
+    new JSROOT.TFile("DATA/" + uuid + "/rzvz_mean.root", function (file) {
+        file.ReadObject(uuid + "::RZVZ_mean", function (obj) {
+            JSROOT.draw("rzvz_mean", obj);
+        });
+    });
+
+    new JSROOT.TFile("DATA/" + uuid + "/rzvz_error.root", function (file) {
+        file.ReadObject(uuid + "::RZVZ_error", function (obj) {
+            JSROOT.draw("rzvz_error", obj);
         });
     });
 }
