@@ -792,35 +792,31 @@ void execute_gaia(const response *res,
       global_hist._rz.set_title(uuid + "::RZ", "R-Z", "R [kpc]", "Z [kpc]");
 
       // 3D histograms
-      global_hist._xyvr.set_title(uuid + "::XYVR", "X-Y-#overline{V}_{R}",
-                                  "X [kpc]", "Y [kpc]",
-                                  "#overline{V}_{R} [km/s]");
-      global_hist._xyvr.set_z_axis("#overline{V}_{R}", "[km/s]");
+      global_hist._xyvr.set_title(uuid + "::XYVR", "X-Y-#bar{V}_{R}", "X [kpc]",
+                                  "Y [kpc]", "#bar{V}_{R} [km/s]");
+      global_hist._xyvr.set_z_axis("#bar{V}_{R}", "[km/s]");
 
-      global_hist._xyvphi.set_title(uuid + "::XYVPhi",
-                                    "X-Y-#overline{V}_{#Phi}", "X [kpc]",
-                                    "Y [kpc]", "#overline{V}_{#Phi} [km/s]");
-      global_hist._xyvphi.set_z_axis("#overline{V}_{#Phi}", "[km/s]");
+      global_hist._xyvphi.set_title(uuid + "::XYVPhi", "X-Y-#bar{V}_{#Phi}",
+                                    "X [kpc]", "Y [kpc]",
+                                    "#bar{V}_{#Phi} [km/s]");
+      global_hist._xyvphi.set_z_axis("#bar{V}_{#Phi}", "[km/s]");
 
-      global_hist._xyvz.set_title(uuid + "::XYVZ", "X-Y-#overline{V}_{Z}",
-                                  "X [kpc]", "Y [kpc]",
-                                  "#overline{V}_{Z} [km/s]");
-      global_hist._xyvz.set_z_axis("#overline{V}_{Z}", "[km/s]");
+      global_hist._xyvz.set_title(uuid + "::XYVZ", "X-Y-#bar{V}_{Z}", "X [kpc]",
+                                  "Y [kpc]", "#bar{V}_{Z} [km/s]");
+      global_hist._xyvz.set_z_axis("#bar{V}_{Z}", "[km/s]");
 
-      global_hist._rzvr.set_title(uuid + "::RZVR", "R-Z-#overline{V}_{R}",
-                                  "R [kpc]", "Z [kpc]",
-                                  "#overline{V}_{R} [km/s]");
-      global_hist._rzvr.set_z_axis("#overline{V}_{R}", "[km/s]");
+      global_hist._rzvr.set_title(uuid + "::RZVR", "R-Z-#bar{V}_{R}", "R [kpc]",
+                                  "Z [kpc]", "#bar{V}_{R} [km/s]");
+      global_hist._rzvr.set_z_axis("#bar{V}_{R}", "[km/s]");
 
-      global_hist._rzvphi.set_title(uuid + "::RZVPhi",
-                                    "R-Z-#overline{V}_{#Phi}", "R [kpc]",
-                                    "Z [kpc]", "#overline{V}_{#Phi} [km/s]");
-      global_hist._rzvphi.set_z_axis("#overline{V}_{#Phi}", "[km/s]");
+      global_hist._rzvphi.set_title(uuid + "::RZVPhi", "R-Z-#bar{V}_{#Phi}",
+                                    "R [kpc]", "Z [kpc]",
+                                    "#bar{V}_{#Phi} [km/s]");
+      global_hist._rzvphi.set_z_axis("#bar{V}_{#Phi}", "[km/s]");
 
-      global_hist._rzvz.set_title(uuid + "::RZVZ", "R-Z-#overline{V}_{Z}",
-                                  "R [kpc]", "Z [kpc]",
-                                  "#overline{V}_{Z} [km/s]");
-      global_hist._rzvz.set_z_axis("#overline{V}_{Z}", "[km/s]");
+      global_hist._rzvz.set_title(uuid + "::RZVZ", "R-Z-#bar{V}_{Z}", "R [kpc]",
+                                  "Z [kpc]", "#bar{V}_{Z} [km/s]");
+      global_hist._rzvz.set_z_axis("#bar{V}_{Z}", "[km/s]");
 
       for (int i = 0; i < max_threads; i++) {
         thread_coords[i] = std::make_shared<OmniCoords>(OmniCoords());
@@ -1127,12 +1123,12 @@ void execute_gaia(const response *res,
       "https://root.cern/js/latest/scripts/JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
 
   // an official development version
-  /*std::string url = "https://root.cern/js/dev/scripts/"
-                    "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
+  std::string url = "https://root.cern/js/dev/scripts/"
+                    "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";
 
   // an early development version
-  std::string url = "https://jsroot.gsi.de/dev/scripts/"
-                    "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";
+  /*std::string url = "https://jsroot.gsi.de/dev/scripts/"
+                    "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
 
   if (!exists)
     html.append("<script type=\"text/javascript\" "
