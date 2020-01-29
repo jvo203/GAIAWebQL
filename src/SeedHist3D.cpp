@@ -170,6 +170,15 @@ void SeedH3::export_root(std::string uuid, std::string docs_root,
       (std::string("#sigma_{") + z_value + std::string("} ") + z_unit).c_str());
 
   // TO DO: fix the main title too
+  std::string error_title = title;
+  size_t pos = title.find_last_of("-");
+
+  if (pos != std::string::npos) {
+    std::string prefix = title.substr(0, pos + 1);
+    error_title =
+        prefix + std::string("#sigma_{") + z_value + std::string("} ");
+    error->SetTitle(error_title.c_str());
+  }
 
   FillRMS(error);
 
@@ -179,7 +188,7 @@ void SeedH3::export_root(std::string uuid, std::string docs_root,
   errorFile.SetCompressionLevel(
       ROOT::RCompressionSetting::ELevel::kDefaultZLIB);
 
-  c = new TCanvas((name + "_error").c_str(), title.c_str(), 600, 500);
+  c = new TCanvas((name + "_error").c_str(), error_title.c_str(), 600, 500);
   c->SetGrid(true);
   error->Draw("CONTZ"); // COLZ or CONTZ
   c->SetRightMargin(0.2);
