@@ -1,5 +1,5 @@
 function get_js_version() {
-    return "JS2020-01-29";
+    return "JS2020-01-30";
 }
 
 function poll_progress() {
@@ -284,33 +284,46 @@ function fetch_plots() {
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvr_error.root", function (file) {
         file.ReadObject(uuid + "::RZVR_error", function (obj) {
-            JSROOT.draw("rzvr_error", obj, "contz");
+            JSROOT.draw("rzvr_error", obj);
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvphi_mean.root", function (file) {
         file.ReadObject(uuid + "::RZVPhi_mean", function (obj) {
-            JSROOT.draw("rzvphi_mean", obj, "contz");
+            JSROOT.draw("rzvphi_mean", obj);
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvphi_error.root", function (file) {
         file.ReadObject(uuid + "::RZVPhi_error", function (obj) {
-            JSROOT.draw("rzvphi_error", obj, "contz");
+            JSROOT.draw("rzvphi_error", obj);
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvz_mean.root", function (file) {
         file.ReadObject(uuid + "::RZVZ_mean", function (obj) {
-            JSROOT.draw("rzvz_mean", obj, "contz");
+            JSROOT.draw("rzvz_mean", obj);
         });
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvz_error.root", function (file) {
         file.ReadObject(uuid + "::RZVZ_error", function (obj) {
-            JSROOT.draw("rzvz_error", obj, "contz");
+            JSROOT.draw("rzvz_error", obj);
         });
     });
+
+    // TEST
+    /*new JSROOT.TFile("DATA/" + uuid + "/rzvphi_mean.root", function (file) {
+        file.ReadObject(uuid + "::RZVPhi_mean", function (obj) {
+            JSROOT.draw("large", obj, "contz");
+        });
+    });
+
+    new JSROOT.TFile("DATA/" + uuid + "/rzvphi_mean.root", function (file) {
+        file.ReadObject(uuid + "::RZVPhi_mean", function (obj) {
+            JSROOT.draw("small", obj, "contz");
+        });
+    });*/
 }
 
 function main() {

@@ -188,7 +188,7 @@ void SeedH3::export_root(std::string uuid, std::string docs_root,
   errorFile.SetCompressionLevel(
       ROOT::RCompressionSetting::ELevel::kDefaultZLIB);
 
-  c = new TCanvas((name + "_error").c_str(), error_title.c_str(), 600, 500);
+  c = new TCanvas((name + "_error").c_str(), error_title.c_str(), 1000, 600);
   c->SetGrid(true);
   error->Draw("CONTZ"); // COLZ or CONTZ
   c->SetRightMargin(0.2);

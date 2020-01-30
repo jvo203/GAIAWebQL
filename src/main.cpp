@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2020-01-29.0"
+#define VERSION_STRING "SV2020-01-30.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -1230,6 +1230,12 @@ void execute_gaia(const response *res,
               "500px\"></div></td><td><div "
               "id=\"rzvz_error\" style=\"width: 600px; height: "
               "500px\"></div></td></tr></table></div>");
+
+  /*html.append("<hr><h3>TEST</h3>");
+  html.append(
+      "<div id=\"large\" style=\"width: 1000px; height: 600px\"></div>");
+  html.append("<div id=\"small\" style=\"width: 500px; height:
+  300px\"></div>");*/
 
   // end of the main div
   html.append("</div>");
