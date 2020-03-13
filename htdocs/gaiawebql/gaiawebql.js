@@ -38,6 +38,10 @@ function poll_status() {
             fetch_plots();// fetch_plots() or fetch_json_data()
         }
 
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 404) {
+            fetch_plots();// fetch_plots() or fetch_json_data()
+        }
+
         // repeat the poll until success
         if (xmlhttp.readyState == 4 && xmlhttp.status == 202) {
             setTimeout(function () {
