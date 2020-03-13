@@ -40,6 +40,7 @@ function poll_status() {
 
         if (xmlhttp.readyState == 4 && xmlhttp.status == 204) {
             console.log("data not found");
+            $("#progress").remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
 
         }
@@ -236,6 +237,7 @@ function fetch_plots() {
         }
         catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#hr').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -248,6 +250,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#xy').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -260,6 +263,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#rz').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -272,6 +276,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#xyvr').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -284,6 +289,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#xyvr').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -296,6 +302,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#xyvphi').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -308,6 +315,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#xyvphi').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -320,6 +328,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#xyvz').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -332,6 +341,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#xyvz').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -345,6 +355,7 @@ function fetch_plots() {
         }
         catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#rzvr').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -357,6 +368,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#rzvr').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -369,6 +381,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#rzvphi').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -381,6 +394,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#rzvphi').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -393,6 +407,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#rzvz').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
@@ -405,6 +420,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $("#plots").remove();
             $('#rzvz').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
