@@ -192,6 +192,16 @@ void http_ok(const response *res) {
   res->end("OK");
 }
 
+void http_created(const response *res) {
+  res->write_head(201);
+  res->end("Created");
+}
+
+void http_accepted(const response *res) {
+  res->write_head(202);
+  res->end("Accepted");
+}
+
 void http_not_found(const response *res) {
   res->write_head(404);
   res->end("Not Found");
@@ -207,9 +217,9 @@ void http_not_implemented(const response *res) {
   res->end("Not Implemented");
 }
 
-void http_accepted(const response *res) {
-  res->write_head(202);
-  res->end("Accepted");
+void http_service_unavailable(const response *res) {
+  res->write_head(503);
+  res->end("Service Unavailable");
 }
 
 void http_internal_server_error(const response *res) {

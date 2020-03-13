@@ -21,6 +21,12 @@ function poll_progress() {
                 console.log(e);
             }
         }
+
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 204) {
+            console.log("data not found");
+            $("#progress").remove();
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     }
 
     xmlhttp.open("POST", url, true);
@@ -42,7 +48,6 @@ function poll_status() {
             console.log("data not found");
             $("#progress").remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
-
         }
 
         // repeat the poll until success
