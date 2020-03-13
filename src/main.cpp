@@ -929,7 +929,8 @@ void execute_gaia(const response *res,
 
       search_done = true;
       plot_thread.join();
-      std::cout << "a global queue length: " << queue.queue.size() << std::endl;
+      std::cout << "a global queue length: " << queue.queue.size()
+                << "\tabort status: " << search_aborted << std::endl;
 
       if (!search_aborted) {
         /*
