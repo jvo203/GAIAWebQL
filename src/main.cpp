@@ -1178,7 +1178,7 @@ void execute_gaia(const response *res,
         " style=\"width:0%\">0/0</div></div>");
     html.append("</div>");
     html.append("<h3 id="
-                "no-results"
+                "no-data"
                 "></h3>");
   }
 
