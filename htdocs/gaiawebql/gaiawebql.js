@@ -230,6 +230,7 @@ function fetch_plots() {
         }
         catch (err) {
             console.log("data not found");
+            $('#hr').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -241,6 +242,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#xy').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -252,6 +254,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#rz').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -263,6 +266,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#xyvr').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -274,6 +278,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#xyvr').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -285,6 +290,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#xyvphi').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -296,6 +302,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#xyvphi').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -307,6 +314,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#xyvz').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -318,6 +326,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#xyvz').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -330,6 +339,7 @@ function fetch_plots() {
         }
         catch (err) {
             console.log("data not found");
+            $('#rzvr').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -341,6 +351,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#rzvr').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -352,6 +363,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#rzvphi').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -363,6 +375,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#rzvphi').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -374,6 +387,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#rzvz').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
@@ -385,6 +399,7 @@ function fetch_plots() {
             });
         } catch (err) {
             console.log("data not found");
+            $('#rzvz').remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     });
