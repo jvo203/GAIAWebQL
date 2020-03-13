@@ -41,4 +41,5 @@ private:
   bool init_done;
   bool invert;
   TH2 *_hist;
+  bool has_data;
 };

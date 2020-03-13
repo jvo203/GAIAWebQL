@@ -26,6 +26,7 @@ SeedH3::SeedH3(bool _invert) {
   title = "_x <=> _y <=> _z";
   _hist = NULL;
   init_done = false;
+  has_data = false;
   invert = _invert;
   data.reserve(BURN_IN);
   x_min = -FLT_MAX;
@@ -46,6 +47,8 @@ SeedH3::~SeedH3() {
 };
 
 void SeedH3::update(float _x, float _y, float _z) {
+  has_data = true;
+
   if (!init_done)
     data.push_back(std::make_tuple(_x, _y, _z));
   else {
@@ -127,14 +130,13 @@ void SeedH3::flush() {
 
 void SeedH3::export_root(std::string uuid, std::string docs_root,
                          std::string type) {
+  if (!has_data)
+    return;
+
   std::string filename =
       docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".root";
 
-  std::cout << "saving " << title << " into " << filename
-            << ", #samples: " << data.size() << std::endl;
-
-  if (data.size() == 0)
-    return;
+  std::cout << "saving " << title << " into " << filename << std::endl;
 
   // mkdir DATA/<uuid>.tmp
   std::string tmp = docs_root + "/gaiawebql/DATA/" + uuid + ".tmp";

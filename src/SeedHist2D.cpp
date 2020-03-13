@@ -27,6 +27,7 @@ SeedH2::SeedH2(bool _invert) {
   title = "_x <=> _y";
   _hist = NULL;
   init_done = false;
+  has_data = false;
   invert = _invert;
   data.reserve(BURN_IN);
   x_min = -FLT_MAX;
@@ -44,6 +45,8 @@ SeedH2::~SeedH2() {
 };
 
 void SeedH2::update(float _x, float _y) {
+  has_data = true;
+
   if (!init_done)
     data.push_back(std::make_tuple(_x, _y));
   else {
@@ -151,14 +154,13 @@ void SeedH2::ReverseYData(TH2 *h) {
 
 void SeedH2::export_root(std::string uuid, std::string docs_root,
                          std::string type) {
+  if (!has_data)
+    return;
+
   std::string filename =
       docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".root";
 
-  std::cout << "saving " << title << " into " << filename
-            << ", #samples: " << data.size() << std::endl;
-
-  if (data.size() == 0)
-    return;
+  std::cout << "saving " << title << " into " << filename << std::endl;
 
   // mkdir DATA/<uuid>.tmp
   std::string tmp = docs_root + "/gaiawebql/DATA/" + uuid + ".tmp";

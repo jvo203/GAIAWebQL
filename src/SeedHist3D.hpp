@@ -46,4 +46,5 @@ private:
   bool init_done;
   bool invert;
   TProfile2D *_hist;
+  bool has_data;
 };
