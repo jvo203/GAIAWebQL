@@ -151,14 +151,14 @@ void SeedH2::ReverseYData(TH2 *h) {
 
 void SeedH2::export_root(std::string uuid, std::string docs_root,
                          std::string type) {
+  std::string filename =
+      docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".root";
+
   std::cout << "saving " << title << " into " << filename
             << ", #samples: " << data.size() << std::endl;
 
   if (data.size() == 0)
     return;
-
-  std::string filename =
-      docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".root";
 
   // mkdir DATA/<uuid>.tmp
   std::string tmp = docs_root + "/gaiawebql/DATA/" + uuid + ".tmp";
