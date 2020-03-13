@@ -1181,7 +1181,7 @@ void execute_gaia(const response *res,
 
   html.append("<div><h3 id="
               "no-data"
-              "></h3><\div>");
+              "></h3></div>");
 
   html.append("<div id=\"hr\" style=\"width: 1000px; height: 600px\"></div>");
 
