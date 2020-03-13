@@ -24,7 +24,9 @@ function poll_progress() {
 
         if (xmlhttp.readyState == 4 && xmlhttp.status == 204) {
             console.log("data not found");
-            $("#progress").remove();
+            $('#processing').remove();
+            $('#completed').remove();
+            $(".progress").remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     }
@@ -46,7 +48,9 @@ function poll_status() {
 
         if (xmlhttp.readyState == 4 && xmlhttp.status == 204) {
             console.log("data not found");
-            $("#progress").remove();
+            $('#processing').remove();
+            $('#completed').remove();
+            $(".progress").remove();
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
 
