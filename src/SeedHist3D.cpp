@@ -127,6 +127,9 @@ void SeedH3::flush() {
 
 void SeedH3::export_root(std::string uuid, std::string docs_root,
                          std::string type) {
+  if (data.size() == 0)
+    return;
+
   std::string filename =
       docs_root + "/gaiawebql/DATA/" + uuid + "/" + type + ".root";
 
