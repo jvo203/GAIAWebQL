@@ -38,8 +38,10 @@ function poll_status() {
             fetch_plots();// fetch_plots() or fetch_json_data()
         }
 
-        if (xmlhttp.readyState == 4 && xmlhttp.status == 404) {
-            fetch_plots();// fetch_plots() or fetch_json_data()
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 204) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+
         }
 
         // repeat the poll until success
