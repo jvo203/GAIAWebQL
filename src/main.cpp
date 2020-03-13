@@ -932,7 +932,8 @@ void execute_gaia(const response *res,
       std::cout << "a global queue length: " << queue.queue.size()
                 << "\tabort status: " << search_aborted << std::endl;
 
-      if (!search_aborted) {
+      // if (!search_aborted)
+      {
         /*
 #pragma omp parallel
         {
