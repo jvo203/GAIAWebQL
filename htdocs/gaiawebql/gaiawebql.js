@@ -1,5 +1,5 @@
 function get_js_version() {
-    return "JS2020-01-30";
+    return "JS2020-03-13";
 }
 
 function poll_progress() {
@@ -213,103 +213,180 @@ function fetch_plots() {
     JSROOT.gStyle.fPadRightMargin = 0.2;
 
     new JSROOT.TFile("DATA/" + uuid + "/hr.root", function (file) {
-        file.ReadObject(uuid + "::HR", function (obj) {
-            // revert the Y axis
-            JSROOT.draw("hr", obj, "colz_ry;logz");
+        try {
+            file.ReadObject(uuid + "::HR", function (obj) {
+                // revert the Y axis
+                JSROOT.draw("hr", obj, "colz_ry;logz");
 
-            var html = '<p>M<SUB>G</SUB> = phot_g_mean_mag + 5 + 5 log<SUB>10</SUB>(parallax / 1000)';
+                var html = '<p>M<SUB>G</SUB> = phot_g_mean_mag + 5 + 5 log<SUB>10</SUB>(parallax / 1000)';
 
-            if (where != "")
-                html += ', where ' + where;
+                if (where != "")
+                    html += ', where ' + where;
 
-            html += '</p>';
+                html += '</p>';
 
-            $('#mg').append(html);
-        });
+                $('#mg').append(html);
+            });
+        }
+        catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xy.root", function (file) {
-        file.ReadObject(uuid + "::XY", function (obj) {
-            JSROOT.draw("xy", obj, "colz;logz");
-        });
+        try {
+            file.ReadObject(uuid + "::XY", function (obj) {
+                JSROOT.draw("xy", obj, "colz;logz");
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rz.root", function (file) {
-        file.ReadObject(uuid + "::RZ", function (obj) {
-            JSROOT.draw("rz", obj, "colz;logz");
-        });
+        try {
+            file.ReadObject(uuid + "::RZ", function (obj) {
+                JSROOT.draw("rz", obj, "colz;logz");
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvr_mean.root", function (file) {
-        file.ReadObject(uuid + "::XYVR_mean", function (obj) {
-            JSROOT.draw("xyvr_mean", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::XYVR_mean", function (obj) {
+                JSROOT.draw("xyvr_mean", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvr_error.root", function (file) {
-        file.ReadObject(uuid + "::XYVR_error", function (obj) {
-            JSROOT.draw("xyvr_error", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::XYVR_error", function (obj) {
+                JSROOT.draw("xyvr_error", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvphi_mean.root", function (file) {
-        file.ReadObject(uuid + "::XYVPhi_mean", function (obj) {
-            JSROOT.draw("xyvphi_mean", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::XYVPhi_mean", function (obj) {
+                JSROOT.draw("xyvphi_mean", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvphi_error.root", function (file) {
-        file.ReadObject(uuid + "::XYVPhi_error", function (obj) {
-            JSROOT.draw("xyvphi_error", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::XYVPhi_error", function (obj) {
+                JSROOT.draw("xyvphi_error", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvz_mean.root", function (file) {
-        file.ReadObject(uuid + "::XYVZ_mean", function (obj) {
-            JSROOT.draw("xyvz_mean", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::XYVZ_mean", function (obj) {
+                JSROOT.draw("xyvz_mean", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/xyvz_error.root", function (file) {
-        file.ReadObject(uuid + "::XYVZ_error", function (obj) {
-            JSROOT.draw("xyvz_error", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::XYVZ_error", function (obj) {
+                JSROOT.draw("xyvz_error", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvr_mean.root", function (file) {
-        file.ReadObject(uuid + "::RZVR_mean", function (obj) {
-            JSROOT.draw("rzvr_mean", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::RZVR_mean", function (obj) {
+                JSROOT.draw("rzvr_mean", obj);
+            });
+        }
+        catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvr_error.root", function (file) {
-        file.ReadObject(uuid + "::RZVR_error", function (obj) {
-            JSROOT.draw("rzvr_error", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::RZVR_error", function (obj) {
+                JSROOT.draw("rzvr_error", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvphi_mean.root", function (file) {
-        file.ReadObject(uuid + "::RZVPhi_mean", function (obj) {
-            JSROOT.draw("rzvphi_mean", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::RZVPhi_mean", function (obj) {
+                JSROOT.draw("rzvphi_mean", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvphi_error.root", function (file) {
-        file.ReadObject(uuid + "::RZVPhi_error", function (obj) {
-            JSROOT.draw("rzvphi_error", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::RZVPhi_error", function (obj) {
+                JSROOT.draw("rzvphi_error", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvz_mean.root", function (file) {
-        file.ReadObject(uuid + "::RZVZ_mean", function (obj) {
-            JSROOT.draw("rzvz_mean", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::RZVZ_mean", function (obj) {
+                JSROOT.draw("rzvz_mean", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     new JSROOT.TFile("DATA/" + uuid + "/rzvz_error.root", function (file) {
-        file.ReadObject(uuid + "::RZVZ_error", function (obj) {
-            JSROOT.draw("rzvz_error", obj);
-        });
+        try {
+            file.ReadObject(uuid + "::RZVZ_error", function (obj) {
+                JSROOT.draw("rzvz_error", obj);
+            });
+        } catch (err) {
+            console.log("data not found");
+            $('#no-data').html("No results have been found. Please try other search criteria.");
+        }
     });
 
     // TEST
