@@ -197,6 +197,11 @@ void http_not_found(const response *res) {
   res->end("Not Found");
 }
 
+void http_no_content(const response *res) {
+  res->write_head(204);
+  res->end("No Content");
+}
+
 void http_not_implemented(const response *res) {
   res->write_head(501);
   res->end("Not Implemented");
@@ -1186,6 +1191,8 @@ void execute_gaia(const response *res,
               "no-data"
               "></h3></div>");
 
+  html.append("<div class=\"plots\">");
+
   html.append("<div id=\"hr\" style=\"width: 1000px; height: 600px\"></div>");
 
   html.append("<div id=\"mg\"></div><hr>");
@@ -1237,6 +1244,9 @@ void execute_gaia(const response *res,
               "500px\"></div></td><td><div "
               "id=\"rzvz_error\" style=\"width: 600px; height: "
               "500px\"></div></td></tr></table></div>");
+
+  // end of plots
+  html.append("</div>");
 
   /*html.append("<hr><h3>TEST</h3>");
   html.append(
@@ -1435,7 +1445,7 @@ int main(int argc, char *argv[]) {
               res.end(json.str());
               return;
             } else
-              return http_not_found(&res);
+              return http_no_content(&res);
           }
         } else
           return http_not_found(&res);
