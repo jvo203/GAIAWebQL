@@ -1177,6 +1177,9 @@ void execute_gaia(const response *res,
         std::to_string(db_index.size()) +
         " style=\"width:0%\">0/0</div></div>");
     html.append("</div>");
+    html.append("<h3 id="
+                "no-results"
+                "></h3>");
   }
 
   html.append("<div id=\"hr\" style=\"width: 1000px; height: 600px\"></div>");
