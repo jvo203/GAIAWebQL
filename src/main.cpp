@@ -915,29 +915,28 @@ void execute_gaia(const response *res,
 #pragma omp single
         {
           for (auto &it : db_index)
-          // if (!search_aborted)
-          {
+            if (!search_aborted) {
 #pragma omp task
-            {
-              int hpx = it.first;
-              auto entry = it.second;
+              {
+                int hpx = it.first;
+                auto entry = it.second;
 
-              // for (size_t i = 0; i < pixels->size(); i++)
-              int tid = omp_get_thread_num();
-              bool abort_search = false;
+                // for (size_t i = 0; i < pixels->size(); i++)
+                int tid = omp_get_thread_num();
+                bool abort_search = false;
 
-              printf("parametric search through hpx %d\n", hpx);
+                printf("parametric search through hpx %d\n", hpx);
 
-              abort_search = search_gaia_db(hpx, entry, uuid, search, where,
-                                            thread_coords[tid], plot_stack,
-                                            queue); //, global_hist);
+                abort_search = search_gaia_db(hpx, entry, uuid, search, where,
+                                              thread_coords[tid], plot_stack,
+                                              queue); //, global_hist);
 
-              if (abort_search) {
-                search_aborted = true;
-                // printf("cancelling a parallel OpenMP search loop.\n");
+                if (abort_search) {
+                  search_aborted = true;
+                  printf("cancelling a parallel OpenMP search loop.\n");
+                }
               }
             }
-          }
         }
       }
 
