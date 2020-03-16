@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2020-03-13.0"
+#define VERSION_STRING "SV2020-03-16.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -1332,7 +1332,7 @@ int main(int argc, char *argv[]) {
   ROOT::EnableThreadSafety();
 
   // load the db healpix index file
-  load_db_index("gaiadr2-table-190926.dat");
+  load_db_index("gaiadr2-table.dat");
 
   // parse local command-line options
   if (argc > 2) {
