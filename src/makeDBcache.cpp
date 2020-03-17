@@ -88,6 +88,7 @@ void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
 
   PGconn *gaia_db = PQconnectdb(conn_str.c_str());
   uint64_t count = 0;
+  uint64_t no_samples = 0;
 
   if (PQstatus(gaia_db) != CONNECTION_OK) {
     fprintf(stderr, "PostgreSQL connection failed: %s\n",
@@ -136,7 +137,7 @@ void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
       PQclear(res);
   }
 
-  // iterate through all the rows
+  // iterate through all the rows  
   sql = "select "
                       "ra,dec,phot_g_mean_mag,bp_rp,parallax,pmra,pmdec,radial_"
                       "velocity,source_id from " +
@@ -145,6 +146,9 @@ void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
                       "null and phot_g_mean_mag is not null and bp_rp is not "
                       "null and pmra is not null and pmdec is not null and "
                       "radial_velocity is not null;";
+
+  // group update statements;
+  std::vector<std::string> batch;
 
   if (PQsendQuery(gaia_db, sql.c_str())) {
       if (PQsetSingleRowMode(gaia_db)) {
@@ -159,10 +163,6 @@ void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
 
             int nRows = PQntuples(res);
             int nFields = PQnfields(res);
-
-            /*for (int i = 0; i < nFields; i++)
-                res_str << PQfname(res, i) << "\t";
-            res_str << std::endl;*/
 
             for (int i = 0; i < nRows; i++) {
               if (nFields >= 8) {
@@ -216,7 +216,8 @@ void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
                 }
 
                 if (valid_data) {
-                  std::cout << source_id << "¥t";
+                  no_samples++;
+                  //std::cout << source_id << "\t";
                   double M_G =
                       phot_g_mean_mag + 5.0 + 5.0 * log10(parallax / 1000.0);
 
@@ -246,7 +247,16 @@ void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
                   double VPhi = sGCY[5]; //[km/s]
 
                   // update the db row
-
+                  sql = "update " + entry->schema_name + "." + entry->table_name + " set" +
+                  " _x = " + std::to_string(X) + ","
+                  " _y = " + std::to_string(Y) + ","
+                  " _z = " + std::to_string(Z) + ","
+                  " _r = " + std::to_string(R) + ","
+                  " _phi = " + std::to_string(Phi)  + ","
+                  " _m_g = " + std::to_string(M_G) +
+                  " where source_id = " + std::to_string(source_id) + ";";
+                  //std::cout << sql << std::endl;
+                  batch.push_back(std::string(sql));
                 }
               }
             }
@@ -258,6 +268,26 @@ void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
         std::cout << "error setting PQsetSingleRowMode.\n";
     } else
       std::cout << "PQsendQuery error.\n";
+
+  std::cout << "processed " << no_samples << "/" << count << " valid records." << std::endl;  
+
+  // batch update
+  count = 0;
+  for (auto &_sql : batch)
+  {
+    PGresult* _res = PQexec(gaia_db, _sql.c_str());
+    ExecStatusType _stat = PQresultStatus(_res);
+
+    if (_stat != PGRES_COMMAND_OK)
+      std::cout << _sql << " : " << PQresStatus(_stat) << std::endl;
+    else
+      count++;
+
+    if(_res != NULL)
+      PQclear(_res);
+  }
+
+  std::cout << "updated " << count << " records." << std::endl;  
 
   // clean up the db connection
   if (gaia_db != NULL)
