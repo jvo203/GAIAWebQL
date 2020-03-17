@@ -1,5 +1,7 @@
 #compilation target
 /gaiawebql
+/makeDBcache
+/astropy
 
 #emacs
 *~
