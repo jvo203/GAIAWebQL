@@ -19,3 +19,6 @@ gcc:
 
 test:
 	icpc -g -O3 -xCORE-AVX2 -I/usr/include/python2.7 src/PJMCoords.cc src/testAstroPy.cpp -o astropy
+
+db:
+	g++ -march=native -g -O3 -std=c++17 -fopenmp -fopenmp-simd -funroll-loops -ftree-vectorize -Wno-register $(DEF) $(INC) src/makeDBcache.cpp -o makeDBcache $(LIBS) $(JEMALLOC)
