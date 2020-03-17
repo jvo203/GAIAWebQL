@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
@@ -23,6 +24,7 @@ struct db_entry {
 };
 
 std::unordered_map<int, std::shared_ptr<struct db_entry>> db_index;
+void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry);
 
 void load_db_index(std::string filename) {
   std::ifstream index_file(filename);
@@ -54,4 +56,22 @@ void load_db_index(std::string filename) {
 int main(int argc, char *argv[]) {
   // load the db healpix index file
   load_db_index("gaiadr2-table.dat");
+
+  // go through the GAIA db once and make a cache
+  //#pragma omp parallel for
+  for (auto &it : db_index) {
+    int hpx = it.first;
+    auto entry = it.second;
+
+    make_gaia_db(hpx, entry);
+  }
+}
+
+void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
+  std::stringstream msg;
+
+  msg << entry->schema_name << "/" << entry->table_name << "/" << entry->owner
+      << "/" << entry->host << ":" << entry->port << "\t";
+
+  std::cout << msg.str() << std::endl;
 }
