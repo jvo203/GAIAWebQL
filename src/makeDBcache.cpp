@@ -69,8 +69,6 @@ int main(int argc, char *argv[]) {
     auto entry = it.second;
 
     make_gaia_db(hpx, entry);
-
-    break;
   }
 }
 
@@ -78,8 +76,8 @@ void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
   OmniCoords coords;
   coords.change_sol_pos(8.3, 0.027);
 
-  std::cout << "schema.table: " << entry->schema_name
-            << "." << entry->table_name << " owner: " << entry->owner
+  std::cout << "schema.table: " << entry->schema_name << "."
+            << entry->table_name << " owner: " << entry->owner
             << " host:port: " << entry->host << ":" << entry->port << std::endl;
 
   std::string conn_str = "dbname=gaiadr2 host=" + entry->host +
@@ -101,181 +99,194 @@ void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
     printf("PostgreSQL connection successful.\n");
 
   // alter table add column
-  std::string sql = "alter table " + entry->schema_name + "." + entry->table_name +
-  " add column _x real,"
-  " add column _y real,"
-  " add column _z real,"
-  " add column _r real,"
-  " add column _phi real,"
-  " add column _m_g real;";
+  std::string sql = "alter table " + entry->schema_name + "." +
+                    entry->table_name +
+                    " add column _x real,"
+                    " add column _y real,"
+                    " add column _z real,"
+                    " add column _r real,"
+                    " add column _phi real,"
+                    " add column _m_g real;";
 
-  PGresult* res = PQexec(gaia_db, sql.c_str());
+  PGresult *res = PQexec(gaia_db, sql.c_str());
   ExecStatusType stat = PQresultStatus(res);
 
   if (stat != PGRES_COMMAND_OK)
-    std::cout << sql << " : " << PQresStatus(stat) << std::endl;  
+    std::cout << sql << " : " << PQresStatus(stat) << std::endl;
 
-  if(res != NULL)
+  if (res != NULL)
     PQclear(res);
 
   // create search indices
   std::string columns[6] = {"_x", "_y", "_z", "_r", "_phi", "_m_g"};
 
-  for(int i=0;i<6;i++) {
+  for (int i = 0; i < 6; i++) {
     std::string column = columns[i];
 
-    //sql = "create index on " + entry->schema_name + "." + entry->table_name + " (" + column + ");";
-    sql = "create index " + entry->table_name + "_" + column + "_idx on " + entry->schema_name + "." + entry->table_name + " (" + column + ");";    
+    // sql = "create index on " + entry->schema_name + "." + entry->table_name +
+    // " (" + column + ");";
+    sql = "create index " + entry->table_name + "_" + column + "_idx on " +
+          entry->schema_name + "." + entry->table_name + " (" + column + ");";
 
     res = PQexec(gaia_db, sql.c_str());
     ExecStatusType stat = PQresultStatus(res);
 
     if (stat != PGRES_COMMAND_OK)
-      std::cout << sql << " : " << PQresStatus(stat) << std::endl;  
+      std::cout << sql << " : " << PQresStatus(stat) << std::endl;
 
-    if(res != NULL)
+    if (res != NULL)
       PQclear(res);
   }
 
-  // iterate through all the rows  
+  // iterate through all the rows
   sql = "select "
-                      "ra,dec,phot_g_mean_mag,bp_rp,parallax,pmra,pmdec,radial_"
-                      "velocity,source_id from " +
-                      entry->schema_name + "." + entry->table_name +
-                      " where parallax > 0 and ra is not null and dec is not "
-                      "null and phot_g_mean_mag is not null and bp_rp is not "
-                      "null and pmra is not null and pmdec is not null and "
-                      "radial_velocity is not null;";
+        "ra,dec,phot_g_mean_mag,bp_rp,parallax,pmra,pmdec,radial_"
+        "velocity,source_id from " +
+        entry->schema_name + "." + entry->table_name +
+        " where parallax > 0 and ra is not null and dec is not "
+        "null and phot_g_mean_mag is not null and bp_rp is not "
+        "null and pmra is not null and pmdec is not null and "
+        "radial_velocity is not null;";
 
   // group update statements;
   std::vector<std::string> batch;
 
   if (PQsendQuery(gaia_db, sql.c_str())) {
-      if (PQsetSingleRowMode(gaia_db)) {
-        PGresult *res = NULL;
+    if (PQsetSingleRowMode(gaia_db)) {
+      PGresult *res = NULL;
 
-        while ((res = PQgetResult(gaia_db)) != NULL) {
-          if (PQresultStatus(res) == PGRES_SINGLE_TUPLE) {
-            count++;
+      while ((res = PQgetResult(gaia_db)) != NULL) {
+        if (PQresultStatus(res) == PGRES_SINGLE_TUPLE) {
+          count++;
 
-            std::stringstream res_str;
-            res_str << count << ":\t";
+          std::stringstream res_str;
+          res_str << count << ":\t";
 
-            int nRows = PQntuples(res);
-            int nFields = PQnfields(res);
+          int nRows = PQntuples(res);
+          int nFields = PQnfields(res);
 
-            for (int i = 0; i < nRows; i++) {
-              if (nFields >= 8) {
-                /*char *e;
-                errno = 0;*/
+          for (int i = 0; i < nRows; i++) {
+            if (nFields >= 8) {
+              /*char *e;
+              errno = 0;*/
 
-                std::size_t pos;
-                long long source_id;
-                double ra, dec, phot_g_mean_mag, bp_rp, parallax, pmra, pmdec,
-                    radial_velocity;
+              std::size_t pos;
+              long long source_id;
+              double ra, dec, phot_g_mean_mag, bp_rp, parallax, pmra, pmdec,
+                  radial_velocity;
 
-                bool valid_data = true;
+              bool valid_data = true;
 
-                try {
-                  ra = std::stod(std::string(PQgetvalue(res, i, 0)), &pos);
+              try {
+                ra = std::stod(std::string(PQgetvalue(res, i, 0)), &pos);
 
-                  dec = std::stod(std::string(PQgetvalue(res, i, 1)), &pos);
+                dec = std::stod(std::string(PQgetvalue(res, i, 1)), &pos);
 
-                  phot_g_mean_mag =
-                      std::stod(std::string(PQgetvalue(res, i, 2)), &pos);
+                phot_g_mean_mag =
+                    std::stod(std::string(PQgetvalue(res, i, 2)), &pos);
 
-                  bp_rp = std::stod(std::string(PQgetvalue(res, i, 3)), &pos);
+                bp_rp = std::stod(std::string(PQgetvalue(res, i, 3)), &pos);
 
-                  parallax =
-                      std::stod(std::string(PQgetvalue(res, i, 4)), &pos);
+                parallax = std::stod(std::string(PQgetvalue(res, i, 4)), &pos);
 
-                  pmra = std::stod(std::string(PQgetvalue(res, i, 5)), &pos);
+                pmra = std::stod(std::string(PQgetvalue(res, i, 5)), &pos);
 
-                  pmdec = std::stod(std::string(PQgetvalue(res, i, 6)), &pos);
+                pmdec = std::stod(std::string(PQgetvalue(res, i, 6)), &pos);
 
-                  radial_velocity =
-                      std::stod(std::string(PQgetvalue(res, i, 7)), &pos);
+                radial_velocity =
+                    std::stod(std::string(PQgetvalue(res, i, 7)), &pos);
 
-                  source_id = std::stoll(std::string(PQgetvalue(res, i, 8)), &pos);
-                } catch (const std::out_of_range &err) {
-                  printf("(%s) (%s) (%s) (%s) (%s) (%s) (%s) (%s) (%s)\n",
-                         PQgetvalue(res, i, 0), PQgetvalue(res, i, 1),
-                         PQgetvalue(res, i, 2), PQgetvalue(res, i, 3),
-                         PQgetvalue(res, i, 4), PQgetvalue(res, i, 5),
-                         PQgetvalue(res, i, 6), PQgetvalue(res, i, 7),
-                         PQgetvalue(res, i, 8));
-                  valid_data = false;
-                } catch (const std::invalid_argument &err) {
-                  printf("(%s) (%s) (%s) (%s) (%s) (%s) (%s) (%s) (%s)\n",
-                         PQgetvalue(res, i, 0), PQgetvalue(res, i, 1),
-                         PQgetvalue(res, i, 2), PQgetvalue(res, i, 3),
-                         PQgetvalue(res, i, 4), PQgetvalue(res, i, 5),
-                         PQgetvalue(res, i, 6), PQgetvalue(res, i, 7),
-                         PQgetvalue(res, i, 7));
-                  valid_data = false;
-                }
+                source_id =
+                    std::stoll(std::string(PQgetvalue(res, i, 8)), &pos);
+              } catch (const std::out_of_range &err) {
+                printf("(%s) (%s) (%s) (%s) (%s) (%s) (%s) (%s) (%s)\n",
+                       PQgetvalue(res, i, 0), PQgetvalue(res, i, 1),
+                       PQgetvalue(res, i, 2), PQgetvalue(res, i, 3),
+                       PQgetvalue(res, i, 4), PQgetvalue(res, i, 5),
+                       PQgetvalue(res, i, 6), PQgetvalue(res, i, 7),
+                       PQgetvalue(res, i, 8));
+                valid_data = false;
+              } catch (const std::invalid_argument &err) {
+                printf("(%s) (%s) (%s) (%s) (%s) (%s) (%s) (%s) (%s)\n",
+                       PQgetvalue(res, i, 0), PQgetvalue(res, i, 1),
+                       PQgetvalue(res, i, 2), PQgetvalue(res, i, 3),
+                       PQgetvalue(res, i, 4), PQgetvalue(res, i, 5),
+                       PQgetvalue(res, i, 6), PQgetvalue(res, i, 7),
+                       PQgetvalue(res, i, 7));
+                valid_data = false;
+              }
 
-                if (valid_data) {
-                  no_samples++;
-                  //std::cout << source_id << "\t";
-                  double M_G =
-                      phot_g_mean_mag + 5.0 + 5.0 * log10(parallax / 1000.0);
+              if (valid_data) {
+                no_samples++;
+                // std::cout << source_id << "\t";
+                double M_G =
+                    phot_g_mean_mag + 5.0 + 5.0 * log10(parallax / 1000.0);
 
-                  double alpha = ra * HTMfunc_Pr;  //[rad]
-                  double delta = dec * HTMfunc_Pr; //[rad]
-                  double d = 1000.0 / parallax;    // distance [parsec, pc]
+                double alpha = ra * HTMfunc_Pr;  //[rad]
+                double delta = dec * HTMfunc_Pr; //[rad]
+                double d = 1000.0 / parallax;    // distance [parsec, pc]
 
-                  vec6 sHEQ, sGCA, sGCY;
-                  sHEQ[0] = d / 1000.0;      //[kpc]
-                  sHEQ[1] = ra;              //[deg]
-                  sHEQ[2] = dec;             //[deg]
-                  sHEQ[3] = radial_velocity; //[km/s]
-                  sHEQ[4] = pmra;
-                  sHEQ[5] = pmdec;
+                vec6 sHEQ, sGCA, sGCY;
+                sHEQ[0] = d / 1000.0;      //[kpc]
+                sHEQ[1] = ra;              //[deg]
+                sHEQ[2] = dec;             //[deg]
+                sHEQ[3] = radial_velocity; //[km/s]
+                sHEQ[4] = pmra;
+                sHEQ[5] = pmdec;
 
-                  sGCA = coords.GCAfromHEQ(sHEQ);
-                  sGCY = coords.GCYfromHEQ(sHEQ);
+                sGCA = coords.GCAfromHEQ(sHEQ);
+                sGCY = coords.GCYfromHEQ(sHEQ);
 
-                  double X = sGCA[0]; //[kpc]
-                  double Y = sGCA[1]; //[kpc]
-                  double Z = sGCA[2]; //[kpc]
+                double X = sGCA[0]; //[kpc]
+                double Y = sGCA[1]; //[kpc]
+                double Z = sGCA[2]; //[kpc]
 
-                  double R = sGCY[0];    //[kpc]
-                  double Phi = sGCY[2];  //[rad]
-                  double VR = sGCY[3];   //[km/s]
-                  double VZ = sGCY[4];   //[km/s]
-                  double VPhi = sGCY[5]; //[km/s]
+                double R = sGCY[0];    //[kpc]
+                double Phi = sGCY[2];  //[rad]
+                double VR = sGCY[3];   //[km/s]
+                double VZ = sGCY[4];   //[km/s]
+                double VPhi = sGCY[5]; //[km/s]
 
-                  // update the db row
-                  sql = "update " + entry->schema_name + "." + entry->table_name + " set" +
-                  " _x = " + std::to_string(X) + ","
-                  " _y = " + std::to_string(Y) + ","
-                  " _z = " + std::to_string(Z) + ","
-                  " _r = " + std::to_string(R) + ","
-                  " _phi = " + std::to_string(Phi)  + ","
-                  " _m_g = " + std::to_string(M_G) +
-                  " where source_id = " + std::to_string(source_id) + ";";
-                  //std::cout << sql << std::endl;
-                  batch.push_back(std::string(sql));
-                }
+                // update the db row
+                sql = "update " + entry->schema_name + "." + entry->table_name +
+                      " set" + " _x = " + std::to_string(X) +
+                      ","
+                      " _y = " +
+                      std::to_string(Y) +
+                      ","
+                      " _z = " +
+                      std::to_string(Z) +
+                      ","
+                      " _r = " +
+                      std::to_string(R) +
+                      ","
+                      " _phi = " +
+                      std::to_string(Phi) +
+                      ","
+                      " _m_g = " +
+                      std::to_string(M_G) +
+                      " where source_id = " + std::to_string(source_id) + ";";
+                // std::cout << sql << std::endl;
+                batch.push_back(std::string(sql));
               }
             }
-          };
-
-          PQclear(res);
+          }
         };
-      } else
-        std::cout << "error setting PQsetSingleRowMode.\n";
-    } else
-      std::cout << "PQsendQuery error.\n";
 
-  std::cout << "processed " << no_samples << "/" << count << " valid records." << std::endl;  
+        PQclear(res);
+      };
+    } else
+      std::cout << "error setting PQsetSingleRowMode.\n";
+  } else
+    std::cout << "PQsendQuery error.\n";
+
+  std::cout << "processed " << no_samples << "/" << count << " valid records."
+            << std::endl;
 
   // batch update
   count = 0;
-  for (auto &_sql : batch)
-  {
-    PGresult* _res = PQexec(gaia_db, _sql.c_str());
+  for (auto &_sql : batch) {
+    PGresult *_res = PQexec(gaia_db, _sql.c_str());
     ExecStatusType _stat = PQresultStatus(_res);
 
     if (_stat != PGRES_COMMAND_OK)
@@ -283,11 +294,11 @@ void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
     else
       count++;
 
-    if(_res != NULL)
+    if (_res != NULL)
       PQclear(_res);
   }
 
-  std::cout << "updated " << count << " records." << std::endl;  
+  std::cout << "updated " << count << " records." << std::endl;
 
   // clean up the db connection
   if (gaia_db != NULL)
