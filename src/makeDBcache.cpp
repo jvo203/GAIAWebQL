@@ -6,6 +6,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <pgsql/libpq-fe.h>
+
 struct db_entry {
   std::string schema_name;
   std::string table_name;
@@ -30,7 +32,7 @@ void load_db_index(std::string filename) {
   std::ifstream index_file(filename);
 
   for (std::string line; getline(index_file, line);) {
-    std::cout << line << std::endl;
+    // std::cout << line << std::endl;
 
     std::vector<std::string> columns;
     boost::split(columns, line, [](char c) { return c == '|'; });
@@ -58,20 +60,39 @@ int main(int argc, char *argv[]) {
   load_db_index("gaiadr2-table.dat");
 
   // go through the GAIA db once and make a cache
-  //#pragma omp parallel for
   for (auto &it : db_index) {
     int hpx = it.first;
     auto entry = it.second;
 
     make_gaia_db(hpx, entry);
+
+    break;
   }
 }
 
 void make_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry) {
-  std::stringstream msg;
+  std::cout << "schema: " << entry->schema_name
+            << " table: " << entry->table_name << " owner: " << entry->owner
+            << " host:port: " << entry->host << ":" << entry->port << std::endl;
 
-  msg << entry->schema_name << "/" << entry->table_name << "/" << entry->owner
-      << "/" << entry->host << ":" << entry->port << "\t";
+  std::string conn_str = "dbname=gaiadr2 host=" + entry->host +
+                         " port=" + std::to_string(entry->port) +
+                         " user=" + entry->owner + " password=jvo!";
 
-  std::cout << msg.str() << std::endl;
+  PGconn *gaia_db = PQconnectdb(conn_str.c_str());
+  uint64_t count = 0;
+
+  if (PQstatus(gaia_db) != CONNECTION_OK) {
+    fprintf(stderr, "PostgreSQL connection failed: %s\n",
+            PQerrorMessage(gaia_db));
+
+    PQfinish(gaia_db);
+    gaia_db = NULL;
+    return;
+  } else
+    printf("PostgreSQL connection successful.\n");
+
+  // clean up the db connection
+  if (gaia_db != NULL)
+    PQfinish(gaia_db);
 }
