@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2020-03-16.0"
+#define VERSION_STRING "SV2020-03-18.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -524,8 +524,47 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
 
     // parallax error
     if (!std::isnan(search->parallax_error_min))
-      sql.append(" and parallax_over_error > " +
+      sql.append(" and parallax_over_error >= " +
                  std::to_string(search->parallax_error_min));
+
+    // validate data against the search critera
+    if (!std::isnan(search->X_min))
+      sql.append(" and _x >= " + std::to_string(search->X_min));
+
+    if (!std::isnan(search->X_max))
+      sql.append(" and _x <= " + std::to_string(search->X_max));
+
+    if (!std::isnan(search->Y_min))
+      sql.append(" and _y >= " + std::to_string(search->Y_min));
+
+    if (!std::isnan(search->Y_max))
+      sql.append(" and _y <= " + std::to_string(search->Y_max));
+
+    if (!std::isnan(search->Z_min))
+      sql.append(" and _z >= " + std::to_string(search->Z_min));
+
+    if (!std::isnan(search->Z_max))
+      sql.append(" and _z <= " + std::to_string(search->Z_max));
+
+    if (!std::isnan(search->R_min))
+      sql.append(" and _r >= " + std::to_string(search->R_min));
+
+    if (!std::isnan(search->R_max))
+      sql.append(" and _r <= " + std::to_string(search->R_max));
+
+    if (!std::isnan(search->Phi_min))
+      sql.append(" and _phi >= " +
+                 std::to_string(search->Phi_min * HTMfunc_Pr));
+
+    if (!std::isnan(search->Phi_max))
+      sql.append(" and _phi <= " +
+                 std::to_string(search->Phi_max * HTMfunc_Pr));
+
+    if (!std::isnan(search->M_G_min))
+      sql.append(" and _m_g >= " + std::to_string(search->M_G_min));
+
+    if (!std::isnan(search->M_G_max))
+      sql.append(" and _m_g <= " + std::to_string(search->M_G_max));
 
     sql.append(";"); // finish the sql
 
@@ -632,7 +671,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
                   bool data_ok = true;
 
                   // validate data against the search critera
-                  if (!std::isnan(search->X_min))
+                  /*if (!std::isnan(search->X_min))
                     if (X < search->X_min)
                       data_ok = false;
 
@@ -678,7 +717,7 @@ bool search_gaia_db(int hpx, std::shared_ptr<struct db_entry> entry, std::string
 
                   if (!std::isnan(search->M_G_max))
                     if (M_G > search->M_G_max)
-                      data_ok = false;
+                      data_ok = false;*/
 
                   // the data is OK, add values to histograms
                   if (data_ok) {
