@@ -333,6 +333,7 @@ void serve_file(const request *req, const response *res, std::string uri) {
     res->write_head(200, mime);
     res->end(file_generator(path));
   } else {
+    std::cout << "[HTTPServer]: " << path << " not found." << std::endl;
     http_not_found(res);
   }
 }
