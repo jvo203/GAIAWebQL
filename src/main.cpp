@@ -1153,9 +1153,6 @@ void execute_gaia(const response *res,
   html.append("<script "
               "src=\"//cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/"
               "numeral.min.js\"></script>\n");
-  html.append("<script "
-              "src=\"https://cdn.jsdelivr.net/gh/jvo203/fits_web_ql/htdocs/"
-              "fitswebql/ra_dec_conversion.js\"></script>\n");
 
   // plotly
   /*html.append(
@@ -1188,7 +1185,10 @@ void execute_gaia(const response *res,
                     "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
 
   // serve JSROOT from a local copy
-  std::string url = "scripts/JSRootCore.js?more2d&3d&io&mathjax&onload=";
+  //std::string url = "scripts/JSRootCore.js?more2d&3d&io&mathjax&onload=";
+
+  // serve JSROOT from CDN (jsdelivr)
+  std::string url = "https://cdn.jsdelivr.net/gh/jvo203/GAIAWebQL/htdocs/gaiawebql/scripts/JSRootCore.js?more2d&3d&io&mathjax&onload=";
 
   if (!exists)
     html.append("<script type=\"text/javascript\" "
