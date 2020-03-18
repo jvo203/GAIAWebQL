@@ -1179,12 +1179,15 @@ void execute_gaia(const response *res,
       "https://root.cern/js/latest/scripts/JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
 
   // an official development version
-  std::string url = "https://root.cern/js/dev/scripts/"
-                    "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";
+  /*std::string url = "https://root.cern/js/dev/scripts/"
+                    "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
 
   // an early development version
   /*std::string url = "https://jsroot.gsi.de/dev/scripts/"
                     "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
+
+  // serve JSROOT from a local copy
+  std::string url = "scripts/JSRootCore.min.js?more2d&3d&io&mathjax&onload=";
 
   if (!exists)
     html.append("<script type=\"text/javascript\" "
