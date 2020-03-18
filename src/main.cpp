@@ -1187,7 +1187,7 @@ void execute_gaia(const response *res,
                     "JSRootCore.min.js?more2d&3d&io&mathjax&onload=";*/
 
   // serve JSROOT from a local copy
-  std::string url = "scripts/JSRootCore.min.js?more2d&3d&io&mathjax&onload=";
+  std::string url = "scripts/JSRootCore.js?more2d&3d&io&mathjax&onload=";
 
   if (!exists)
     html.append("<script type=\"text/javascript\" "
