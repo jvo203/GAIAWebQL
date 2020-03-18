@@ -22,3 +22,6 @@ test:
 
 db:
 	g++ -march=native -g -O3 -std=c++17 -fopenmp -fopenmp-simd -funroll-loops -ftree-vectorize -Wno-register $(DEF) $(INC) src/PJMCoords.cc src/makeDBcache.cpp -o makeDBcache $(LIBS) $(JEMALLOC)
+
+# execution on py1
+# export OMP_NUM_THREADS=10
