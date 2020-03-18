@@ -63,12 +63,20 @@ int main(int argc, char *argv[]) {
   // load the db healpix index file
   load_db_index("gaiadr2-table.dat");
 
-  // go through the GAIA db once and make a cache
-  for (auto &it : db_index) {
-    int hpx = it.first;
-    auto entry = it.second;
-
-    make_gaia_db(hpx, entry);
+// go through the GAIA db once and make a cache
+#pragma omp parallel
+  {
+#pragma omp single
+    {
+      for (auto &it : db_index) {
+#pragma omp task
+        {
+          int hpx = it.first;
+          auto entry = it.second;
+          make_gaia_db(hpx, entry);
+        }
+      }
+    }
   }
 }
 
