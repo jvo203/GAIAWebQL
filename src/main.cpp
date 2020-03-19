@@ -1241,7 +1241,7 @@ void execute_gaia(const response *res,
   else
     html.append("<div><h3 id="
               "fetching"
-              ">Fetching the datasets, please wait...</h3></div>");
+              ">Fetching the plots, please wait...</h3></div>");
 
   html.append("<div><h3 id="
               "no-data"
