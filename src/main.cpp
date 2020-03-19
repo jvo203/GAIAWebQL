@@ -1191,7 +1191,7 @@ void execute_gaia(const response *res,
   std::string url = "https://cdn.jsdelivr.net/gh/jvo203/GAIAWebQL/htdocs/gaiawebql/scripts/JSRootCore.js?more2d&3d&io&mathjax&onload=";
 
   if (!exists)
-    html.append("<script type=\"text/javascript\" "
+    html.append("<script defer type=\"text/javascript\" "
                 "src=\"" +
                 url + "onloaded\"></script>");
   else
