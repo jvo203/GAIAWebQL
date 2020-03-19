@@ -1195,7 +1195,7 @@ void execute_gaia(const response *res,
                 "src=\"" +
                 url + "onloaded\"></script>");
   else
-    html.append("<script type=\"text/javascript\" "
+    html.append("<script defer type=\"text/javascript\" "
                 "src=\"" +
                 url + "fetch_plots\"></script>"); // was fetch_plots()
 
