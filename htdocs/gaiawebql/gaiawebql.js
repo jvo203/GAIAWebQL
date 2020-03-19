@@ -1,5 +1,5 @@
 function get_js_version() {
-    return "JS2020-03-13";
+    return "JS2020-03-19";
 }
 
 function poll_progress() {
@@ -26,7 +26,7 @@ function poll_progress() {
             console.log("data not found");
             $('#processing').remove();
             $('#completed').remove();
-            $(".progress").remove();
+            $(".progress").remove();        
             $('#no-data').html("No results have been found. Please try other search criteria.");
         }
     }
@@ -243,6 +243,7 @@ function fetch_plots() {
 
                 $('#mg').append(html);
             });
+            $("#fetching").remove();
         }
         catch (err) {
             console.log("data not found");
@@ -257,6 +258,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XY", function (obj) {
                 JSROOT.draw("xy", obj, "colz;logz");
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -270,6 +272,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZ", function (obj) {
                 JSROOT.draw("rz", obj, "colz;logz");
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -283,6 +286,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVR_mean", function (obj) {
                 JSROOT.draw("xyvr_mean", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -296,6 +300,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVR_error", function (obj) {
                 JSROOT.draw("xyvr_error", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -309,6 +314,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVPhi_mean", function (obj) {
                 JSROOT.draw("xyvphi_mean", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -322,6 +328,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVPhi_error", function (obj) {
                 JSROOT.draw("xyvphi_error", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -335,6 +342,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVZ_mean", function (obj) {
                 JSROOT.draw("xyvz_mean", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -348,6 +356,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVZ_error", function (obj) {
                 JSROOT.draw("xyvz_error", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -361,6 +370,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVR_mean", function (obj) {
                 JSROOT.draw("rzvr_mean", obj);
             });
+            $("#fetching").remove();
         }
         catch (err) {
             console.log("data not found");
@@ -375,6 +385,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVR_error", function (obj) {
                 JSROOT.draw("rzvr_error", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -388,6 +399,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVPhi_mean", function (obj) {
                 JSROOT.draw("rzvphi_mean", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -401,6 +413,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVPhi_error", function (obj) {
                 JSROOT.draw("rzvphi_error", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -414,6 +427,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVZ_mean", function (obj) {
                 JSROOT.draw("rzvz_mean", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
@@ -427,6 +441,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVZ_error", function (obj) {
                 JSROOT.draw("rzvz_error", obj);
             });
+            $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
             $("#plots").remove();
