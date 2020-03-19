@@ -1237,6 +1237,9 @@ void execute_gaia(const response *res,
         std::to_string(db_index.size()) +
         " style=\"width:0%\">0/0</div></div>");
     html.append("</div>");
+    html.append("<div><h3 id="
+              "fetching"
+              "></h3></div>");
   }
   else
     html.append("<div><h3 id="
