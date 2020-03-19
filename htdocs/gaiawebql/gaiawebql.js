@@ -222,8 +222,7 @@ function fetch_json_data() {
 
 function fetch_plots() {
     console.log("fetching plots for " + uuid);
-
-    $('#completed').remove();
+    
     //JSROOT.gStyle.fOptLogz = 1;
     JSROOT.gStyle.fPadLeftMargin = 0.15;
     JSROOT.gStyle.fPadRightMargin = 0.2;
@@ -243,6 +242,7 @@ function fetch_plots() {
 
                 $('#mg').append(html);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         }
         catch (err) {
@@ -258,6 +258,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XY", function (obj) {
                 JSROOT.draw("xy", obj, "colz;logz");
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -272,6 +273,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZ", function (obj) {
                 JSROOT.draw("rz", obj, "colz;logz");
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -286,6 +288,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVR_mean", function (obj) {
                 JSROOT.draw("xyvr_mean", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -300,6 +303,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVR_error", function (obj) {
                 JSROOT.draw("xyvr_error", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -314,6 +318,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVPhi_mean", function (obj) {
                 JSROOT.draw("xyvphi_mean", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -328,6 +333,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVPhi_error", function (obj) {
                 JSROOT.draw("xyvphi_error", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -342,6 +348,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVZ_mean", function (obj) {
                 JSROOT.draw("xyvz_mean", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -356,6 +363,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::XYVZ_error", function (obj) {
                 JSROOT.draw("xyvz_error", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -370,6 +378,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVR_mean", function (obj) {
                 JSROOT.draw("rzvr_mean", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         }
         catch (err) {
@@ -385,6 +394,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVR_error", function (obj) {
                 JSROOT.draw("rzvr_error", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -399,6 +409,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVPhi_mean", function (obj) {
                 JSROOT.draw("rzvphi_mean", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -413,6 +424,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVPhi_error", function (obj) {
                 JSROOT.draw("rzvphi_error", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -427,6 +439,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVZ_mean", function (obj) {
                 JSROOT.draw("rzvz_mean", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
@@ -441,6 +454,7 @@ function fetch_plots() {
             file.ReadObject(uuid + "::RZVZ_error", function (obj) {
                 JSROOT.draw("rzvz_error", obj);
             });
+            $('#completed').remove();
             $("#fetching").remove();
         } catch (err) {
             console.log("data not found");
