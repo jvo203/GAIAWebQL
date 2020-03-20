@@ -23,7 +23,7 @@ cos(_theta)}}; const double dGC = 8300.0;*/
 #define SERVER_PORT 8081
 #define SERVER_STRING                                                          \
   "GAIAWebQL v" STR(VERSION_MAJOR) "." STR(VERSION_MINOR) "." STR(VERSION_SUB)
-#define VERSION_STRING "SV2020-03-19.0"
+#define VERSION_STRING "SV2020-03-20.0"
 
 #include <pwd.h>
 #include <sys/mman.h>
@@ -1188,7 +1188,7 @@ void execute_gaia(const response *res,
   //std::string url = "scripts/JSRootCore.js?more2d&3d&io&mathjax&onload=";
 
   // serve JSROOT from CDN (jsdelivr)
-  std::string url = "https://cdn.jsdelivr.net/gh/jvo203/GAIAWebQL/htdocs/gaiawebql/scripts/JSRootCore.js?more2d&3d&io&mathjax&onload=";
+  std::string url = "https://cdn.jsdelivr.net/gh/jvo203/GAIAWebQL/htdocs/gaiawebql/scripts/JSRootCore.js?more2d&3d&io&onload=";
 
   if (!exists)
     html.append("<script defer type=\"text/javascript\" "
